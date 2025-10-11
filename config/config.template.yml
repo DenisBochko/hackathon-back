@@ -1,5 +1,6 @@
 app:
   service_name: "hackathon-back"
+  version: 0.1.0
 log:
   level: "debug"
   format_json: false

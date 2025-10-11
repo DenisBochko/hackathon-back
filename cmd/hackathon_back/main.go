@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"hackathon-back/internal/docs"
 	"os/signal"
 	"syscall"
 
@@ -9,13 +11,13 @@ import (
 
 	"hackathon-back/internal/app"
 	"hackathon-back/internal/config"
-	_ "hackathon-back/internal/docs"
+	_ "hackathon-back/internal/docs" // DO NOT REMOVE MFK
 	"hackathon-back/pkg/logger"
 )
 
 // @title Hackathon API
 // @version 1.0
-// @description API для Hackathon проекта
+// @description API для Hackathon
 // @host localhost:8080
 // @BasePath /api/
 func main() {
@@ -26,6 +28,11 @@ func main() {
 
 	cfg := config.MustLoadConfig()
 	config.MustPrintConfig(cfg)
+
+	docs.SwaggerInfo.Title = cfg.App.ServiceName
+	docs.SwaggerInfo.Version = cfg.App.Version
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
+	docs.SwaggerInfo.BasePath = cfg.HTTPServer.BasePath
 
 	loggerCfg := &logger.Config{
 		Level:      cfg.Level,

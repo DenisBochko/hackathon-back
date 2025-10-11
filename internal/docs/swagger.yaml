@@ -14,7 +14,7 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: API для Hackathon проекта
+  description: API для Hackathon
   title: Hackathon API
   version: "1.0"
 paths:

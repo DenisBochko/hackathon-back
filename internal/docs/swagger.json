@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API для Hackathon проекта",
+        "description": "API для Hackathon",
         "title": "Hackathon API",
         "contact": {},
         "version": "1.0"

@@ -61,7 +61,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/",
 	Schemes:          []string{},
 	Title:            "Hackathon API",
-	Description:      "API для Hackathon проекта",
+	Description:      "API для Hackathon",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

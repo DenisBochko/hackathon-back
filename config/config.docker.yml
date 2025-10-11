@@ -1,0 +1,62 @@
+app:
+  service_name: "hackathon-back"
+log:
+  level: "debug"
+  format_json: false
+  rotation:
+    file: "./hackathon-back.log"
+    max_size: 10
+    max_backups: 3
+    max_age: 7
+database:
+  host: "postgres"
+  port: 5432
+  user: "admin"
+  password: "admin"
+  name: "hackathon-back"
+  ssl_mode: "disable"
+  max_conns: 10
+  min_conns: 2
+  migration:
+    path: "./migrations"
+    auto_apply: true
+redis:
+  enable: true
+  host: "redis"
+  port: 6379
+  password: "admin"
+  db: 0
+http_server:
+  host: "0.0.0.0"
+  port: 8080
+  base_path: "/api"
+  timeout:
+    request: 3s
+    read: 5s
+    write: 5s
+    idle: 5s
+  cors:
+    enabled: false
+    allow_all_origins: true
+    allow_origins: [ ]
+    allow_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "PATCH"
+      - "DELETE"
+      - "OPTIONS"
+    allow_headers:
+      - "Origin"
+      - "Content-Type"
+      - "Accept"
+      - "Authorization"
+    expose_headers:
+      - "Content-Length"
+    allow_credentials: true
+    max_age: 12h
+    allow_websockets: true
+    allow_files: false
+  jwt:
+    access_secret: "access_secret"
+    refresh_secret: "refresh_secret"

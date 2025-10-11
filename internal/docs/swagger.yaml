@@ -1,0 +1,34 @@
+basePath: /api/
+definitions:
+  _ResponseWithMessage:
+    description: Общий простой ответ, который передает только понятное для человека
+      сообщение.
+    properties:
+      message:
+        description: Человеко-читаемое сообщение
+        type: string
+      status:
+        description: Результат запроса
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для Hackathon проекта
+  title: Hackathon API
+  version: "1.0"
+paths:
+  /health/ping:
+    get:
+      description: Возвращает “pong”.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Проверка здоровья сервиса.
+      tags:
+      - health
+swagger: "2.0"

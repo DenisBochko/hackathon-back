@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:17
+    container_name: postgres
+    environment:
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_USER: "admin"
+      POSTGRES_DB: "hackathon-back"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:8.2.1
+    container_name: redis
+    environment:
+      - REDIS_PASSWORD=admin
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "admin", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+#  wb-tech-test-assignment:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    container_name: wb-tech-test-assignment
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#      broker:
+#        condition: service_healthy
+#    ports:
+#      - "8080:8080"
+#    volumes:
+#      - ./config/config.docker.yml:/app/config/config.docker.yml
+#    environment:
+#      CONFIG_PATH: "/app/config/config.docker.yml"
+
+volumes:
+  postgres_data:
+  redis_data:

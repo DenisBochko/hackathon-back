@@ -1,0 +1,49 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API для Hackathon проекта",
+        "title": "Hackathon API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/",
+    "paths": {
+        "/health/ping": {
+            "get": {
+                "description": "Возвращает “pong”.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Проверка здоровья сервиса.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "_ResponseWithMessage": {
+            "description": "Общий простой ответ, который передает только понятное для человека сообщение.",
+            "type": "object",
+            "properties": {
+                "message": {
+                    "description": "Человеко-читаемое сообщение",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Результат запроса",
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

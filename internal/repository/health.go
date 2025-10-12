@@ -3,11 +3,12 @@ package repository
 import (
 	"context"
 	"errors"
-	"hackathon-back/internal/apperrors"
-	"hackathon-back/internal/model"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"hackathon-back/internal/apperrors"
+	"hackathon-back/internal/model"
 )
 
 type HealthRepository struct {

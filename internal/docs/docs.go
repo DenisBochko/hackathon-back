@@ -15,6 +15,334 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/confirm": {
+            "post": {
+                "description": "Принимает код с почты + временный токен, который вернул handler register/resend-confirmation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Подтверждение пользователя.",
+                "parameters": [
+                    {
+                        "description": "Данные для подтверждения пользователя",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ConfirmationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User confirmed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid verification code/Token has expired",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Token does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to confirmation user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Принимает почту и пароль, выставляет access и refresh токен в cookie, они автоматически отправляются при каждом запросе к api.\nLogin только подтверждённых пользователей.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login пользователя.",
+                "parameters": [
+                    {
+                        "description": "Данные для подтверждения входа",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User successfully logged in",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credential/User isn't confirmed",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to login user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Аннигиляция access и refresh токена.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout пользователя.",
+                "responses": {
+                    "200": {
+                        "description": "Logged out",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to logout",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Получает refresh токен из cookies, проверяет его, если он не истёк, то выставляет новые access и refresh токены.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh jwt токенов.",
+                "responses": {
+                    "200": {
+                        "description": "User successfully refreshed",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Refresh token expired",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to refresh user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "Принимает данные об имени, почте, пароле. Далее сохраняет пользователя в бд,\nотправляет 4-х значный код на почту и возвращает структуру пользователя, токен, который нужен для подтверждения регистрации.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Регистрация пользователя.",
+                "parameters": [
+                    {
+                        "description": "Данные для регистрации пользователя",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/AuthResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to register user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/resend-confirmation": {
+            "post": {
+                "description": "Генерирует новую пару токен + 4-х значный код, код отправляет на почту,\nвозвращает новый токен, старый аннулируется.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Повторная отправка токена кода подтверждения.",
+                "parameters": [
+                    {
+                        "description": "Данные для повторной отправки кода подтверждения",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ResendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/AuthToken"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to resend confirmation",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/test-login": {
+            "post": {
+                "description": "Создаёт пользователя с рандомными данными, выставляет access токен в cookie.\nУчти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh работать не будет.\nИз этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Тестовый единоразовый вход.",
+                "responses": {
+                    "200": {
+                        "description": "User successfully logged in",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to login user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/health/ping": {
             "get": {
                 "description": "Возвращает “pong”.",
@@ -22,7 +350,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "health"
+                    "Health"
                 ],
                 "summary": "Проверка здоровья сервиса.",
                 "responses": {
@@ -37,6 +365,204 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "AuthRequest": {
+            "description": "Данные, передаваемые в json для регистрации.",
+            "type": "object",
+            "required": [
+                "email",
+                "password",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Электронная почта пользователя",
+                    "type": "string",
+                    "format": "email",
+                    "example": "Dimka228@gmail.com"
+                },
+                "password": {
+                    "description": "Пароль пользователя",
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "example": "12345678"
+                },
+                "username": {
+                    "description": "Имя пользователя",
+                    "type": "string",
+                    "example": "Dimka228"
+                }
+            }
+        },
+        "AuthResponse": {
+            "description": "Данные, которые получает пользователь после регистрации.",
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "description": "Токен для подтверждения регистрации",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "user": {
+                    "$ref": "#/definitions/User"
+                }
+            }
+        },
+        "AuthToken": {
+            "description": "Токен для подтверждения регистрации.",
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "description": "Токен для подтверждения регистрации",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "ConfirmationRequest": {
+            "description": "Запрос на подтверждение регистрации.",
+            "type": "object",
+            "required": [
+                "code",
+                "token"
+            ],
+            "properties": {
+                "code": {
+                    "description": "Код, полученный с email",
+                    "type": "string",
+                    "example": "0228"
+                },
+                "token": {
+                    "description": "Токен, который вернул handler register/resend-confirmation",
+                    "type": "string",
+                    "example": "89as098ga0998=asdg=+afgk=="
+                }
+            }
+        },
+        "LoginRequest": {
+            "description": "Данные, для входа.",
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Электронная почта пользователя",
+                    "type": "string",
+                    "format": "email",
+                    "example": "Dimka228@gmail.com"
+                },
+                "password": {
+                    "description": "Пароль пользователя",
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "example": "12345678"
+                }
+            }
+        },
+        "ResendRequest": {
+            "description": "Запрос на переотправку кода подтверждения.",
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "description": "Электронная почта пользователя",
+                    "type": "string",
+                    "format": "email",
+                    "example": "Dimka228@gmail.com"
+                }
+            }
+        },
+        "User": {
+            "description": "Модель пользователя, хз что ещё сказать можно по этому поводу.",
+            "type": "object",
+            "required": [
+                "blocked",
+                "confirmed",
+                "createdAt",
+                "deleted",
+                "email",
+                "id",
+                "role",
+                "updatedAt"
+            ],
+            "properties": {
+                "blocked": {
+                    "description": "Заблокирован ли пользователь",
+                    "type": "boolean",
+                    "example": false
+                },
+                "confirmed": {
+                    "description": "Подтверждён ли пользователь",
+                    "type": "boolean",
+                    "example": true
+                },
+                "createdAt": {
+                    "description": "Timestamp создания аккаунта",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2006-01-02T15:04:05Z"
+                },
+                "deleted": {
+                    "description": "Удалён ли пользователь",
+                    "type": "boolean",
+                    "example": true
+                },
+                "email": {
+                    "description": "Электронная почта пользователя",
+                    "type": "string",
+                    "example": "Dimka228@gmail.com"
+                },
+                "id": {
+                    "description": "ID пользователя",
+                    "type": "string",
+                    "example": "1"
+                },
+                "role": {
+                    "description": "Роль пользователя",
+                    "type": "string",
+                    "example": "user"
+                },
+                "updatedAt": {
+                    "description": "Timestamp последнего обновления аккаунта",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2006-01-02T15:04:05Z"
+                },
+                "username": {
+                    "description": "Имя пользователя",
+                    "type": "string",
+                    "example": "Dimka228"
+                }
+            }
+        },
+        "_ResponseWithData": {
+            "description": "Общий ответ success/error, содержащий произвольные данные.",
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "Объект полезной нагрузки"
+                },
+                "status": {
+                    "description": "Результат запроса",
+                    "type": "string"
+                }
+            }
+        },
         "_ResponseWithMessage": {
             "description": "Общий простой ответ, который передает только понятное для человека сообщение.",
             "type": "object",
@@ -56,7 +582,7 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
+	Version:          "0.1.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api/",
 	Schemes:          []string{},

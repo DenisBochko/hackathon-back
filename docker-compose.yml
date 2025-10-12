@@ -31,6 +31,12 @@ services:
       timeout: 10s
       retries: 5
 
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
 #  wb-tech-test-assignment:
 #    build:
 #      context: .

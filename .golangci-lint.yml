@@ -92,7 +92,7 @@ linters:
 
 formatters:
   enable:
-    - gofumpt  # Автоформатирование кода (жёстче чем gofmt)
+    - gofmt  # Автоформатирование кода (жёстче чем gofmt)
     - gci      # Упорядочивание импортов
   settings:
     gofumpt:

@@ -16,7 +16,8 @@ const maxMultipartMemory = 1 << 30
 func SetupRouter(
 	log *zap.Logger,
 	cfg *config.Config,
-	hdl HealthHandler,
+	healthHdl HealthHandler,
+	authHdl AuthHandler,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
@@ -39,7 +40,10 @@ func SetupRouter(
 	RegisterDock(docsPath)
 
 	healthPath := basePath.Group("/health")
-	RegisterHealth(healthPath, hdl)
+	RegisterHealth(healthPath, healthHdl)
+
+	authPath := basePath.Group("/auth")
+	RegisterAuth(authPath, authHdl)
 
 	return router
 }

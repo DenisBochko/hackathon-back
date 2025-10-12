@@ -1,5 +1,14 @@
 basePath: /api/
 definitions:
+  _ResponseWithData:
+    description: Общий ответ success/error, содержащий произвольные данные.
+    properties:
+      data:
+        description: Объект полезной нагрузки
+      status:
+        description: Результат запроса
+        type: string
+    type: object
   _ResponseWithMessage:
     description: Общий простой ответ, который передает только понятное для человека
       сообщение.
@@ -11,13 +20,375 @@ definitions:
         description: Результат запроса
         type: string
     type: object
+  AuthRequest:
+    description: Данные, передаваемые в json для регистрации.
+    properties:
+      email:
+        description: Электронная почта пользователя
+        example: Dimka228@gmail.com
+        format: email
+        type: string
+      password:
+        description: Пароль пользователя
+        example: "12345678"
+        format: password
+        minLength: 8
+        type: string
+      username:
+        description: Имя пользователя
+        example: Dimka228
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  AuthResponse:
+    description: Данные, которые получает пользователь после регистрации.
+    properties:
+      token:
+        description: Токен для подтверждения регистрации
+        items:
+          type: integer
+        type: array
+      user:
+        $ref: '#/definitions/User'
+    required:
+    - token
+    type: object
+  AuthToken:
+    description: Токен для подтверждения регистрации.
+    properties:
+      token:
+        description: Токен для подтверждения регистрации
+        items:
+          type: integer
+        type: array
+    required:
+    - token
+    type: object
+  ConfirmationRequest:
+    description: Запрос на подтверждение регистрации.
+    properties:
+      code:
+        description: Код, полученный с email
+        example: "0228"
+        type: string
+      token:
+        description: Токен, который вернул handler register/resend-confirmation
+        example: 89as098ga0998=asdg=+afgk==
+        type: string
+    required:
+    - code
+    - token
+    type: object
+  LoginRequest:
+    description: Данные, для входа.
+    properties:
+      email:
+        description: Электронная почта пользователя
+        example: Dimka228@gmail.com
+        format: email
+        type: string
+      password:
+        description: Пароль пользователя
+        example: "12345678"
+        format: password
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  ResendRequest:
+    description: Запрос на переотправку кода подтверждения.
+    properties:
+      email:
+        description: Электронная почта пользователя
+        example: Dimka228@gmail.com
+        format: email
+        type: string
+    required:
+    - email
+    type: object
+  User:
+    description: Модель пользователя, хз что ещё сказать можно по этому поводу.
+    properties:
+      blocked:
+        description: Заблокирован ли пользователь
+        example: false
+        type: boolean
+      confirmed:
+        description: Подтверждён ли пользователь
+        example: true
+        type: boolean
+      createdAt:
+        description: Timestamp создания аккаунта
+        example: "2006-01-02T15:04:05Z"
+        format: date-time
+        type: string
+      deleted:
+        description: Удалён ли пользователь
+        example: true
+        type: boolean
+      email:
+        description: Электронная почта пользователя
+        example: Dimka228@gmail.com
+        type: string
+      id:
+        description: ID пользователя
+        example: "1"
+        type: string
+      role:
+        description: Роль пользователя
+        example: user
+        type: string
+      updatedAt:
+        description: Timestamp последнего обновления аккаунта
+        example: "2006-01-02T15:04:05Z"
+        format: date-time
+        type: string
+      username:
+        description: Имя пользователя
+        example: Dimka228
+        type: string
+    required:
+    - blocked
+    - confirmed
+    - createdAt
+    - deleted
+    - email
+    - id
+    - role
+    - updatedAt
+    type: object
 host: localhost:8080
 info:
   contact: {}
   description: API для Hackathon
   title: Hackathon API
-  version: "1.0"
+  version: 0.1.0
 paths:
+  /auth/confirm:
+    post:
+      consumes:
+      - application/json
+      description: Принимает код с почты + временный токен, который вернул handler
+        register/resend-confirmation.
+      parameters:
+      - description: Данные для подтверждения пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/ConfirmationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User confirmed successfully
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid JSON body
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "401":
+          description: Invalid verification code/Token has expired
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: Token does not exist
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to confirmation user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Подтверждение пользователя.
+      tags:
+      - Auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Принимает почту и пароль, выставляет access и refresh токен в cookie, они автоматически отправляются при каждом запросе к api.
+        Login только подтверждённых пользователей.
+      parameters:
+      - description: Данные для подтверждения входа
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User successfully logged in
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid JSON body
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "401":
+          description: Invalid credential/User isn't confirmed
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: User does not exist
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to login user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Login пользователя.
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      description: Аннигиляция access и refresh токена.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Logged out
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to logout
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Logout пользователя.
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      description: Получает refresh токен из cookies, проверяет его, если он не истёк,
+        то выставляет новые access и refresh токены.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User successfully refreshed
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "401":
+          description: Refresh token expired
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: User does not exist
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to refresh user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Refresh jwt токенов.
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Принимает данные об имени, почте, пароле. Далее сохраняет пользователя в бд,
+        отправляет 4-х значный код на почту и возвращает структуру пользователя, токен, который нужен для подтверждения регистрации.
+      parameters:
+      - description: Данные для регистрации пользователя
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/AuthResponse'
+              type: object
+        "400":
+          description: Invalid JSON body
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "409":
+          description: User already exists
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to register user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Регистрация пользователя.
+      tags:
+      - Auth
+  /auth/resend-confirmation:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Генерирует новую пару токен + 4-х значный код, код отправляет на почту,
+        возвращает новый токен, старый аннулируется.
+      parameters:
+      - description: Данные для повторной отправки кода подтверждения
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/ResendRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/AuthToken'
+              type: object
+        "400":
+          description: Invalid JSON body
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to resend confirmation
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Повторная отправка токена кода подтверждения.
+      tags:
+      - Auth
+  /auth/test-login:
+    post:
+      description: |-
+        Создаёт пользователя с рандомными данными, выставляет access токен в cookie.
+        Учти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh работать не будет.
+        Из этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User successfully logged in
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to login user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Тестовый единоразовый вход.
+      tags:
+      - Auth
   /health/ping:
     get:
       description: Возвращает “pong”.
@@ -30,5 +401,5 @@ paths:
             $ref: '#/definitions/_ResponseWithMessage'
       summary: Проверка здоровья сервиса.
       tags:
-      - health
+      - Health
 swagger: "2.0"

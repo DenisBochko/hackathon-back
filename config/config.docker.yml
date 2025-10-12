@@ -59,5 +59,15 @@ http_server:
     allow_websockets: true
     allow_files: false
   jwt:
-    access_secret: "access_secret"
-    refresh_secret: "refresh_secret"
+    access_token_ttl: 20m
+    refresh_token_ttl: 43200m
+mailer:
+  host: "mailhog"
+  port: 1025
+  username: ""
+  password: ""
+  from: "hackathon-back"
+  use_tls: false
+key:
+  public: "./ecdsa_public.pem"
+  private: "./ecdsa_private.pem"

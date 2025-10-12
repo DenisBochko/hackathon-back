@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
-	"hackathon-back/internal/model"
-	"hackathon-back/internal/repository"
 
 	"go.uber.org/zap"
+
+	"hackathon-back/internal/model"
+	"hackathon-back/internal/repository"
 )
 
 type HealthRepository interface {

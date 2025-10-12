@@ -37,7 +37,7 @@ http_server:
     write: 5s
     idle: 5s
   cors:
-    enabled: false
+    enabled: true
     allow_all_origins: true
     allow_origins: [ ]
     allow_methods:
@@ -57,7 +57,17 @@ http_server:
     allow_credentials: true
     max_age: 12h
     allow_websockets: true
-    allow_files: false
+    allow_files: true
   jwt:
-    access_secret: "access_secret"
-    refresh_secret: "refresh_secret"
+    access_token_ttl: 20m
+    refresh_token_ttl: 43200m
+mailer:
+  host: "127.0.0.1"
+  port: 1025
+  username: ""
+  password: ""
+  from: "hackathon-back"
+  use_tls: false
+key:
+  public: "./ecdsa_public.pem"
+  private: "./ecdsa_private.pem"

@@ -3,12 +3,13 @@ package handler
 import (
 	"context"
 	"errors"
-	"hackathon-back/internal/apperrors"
-	"hackathon-back/internal/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"hackathon-back/internal/apperrors"
+	"hackathon-back/internal/model"
 )
 
 type HealthService interface {
@@ -31,7 +32,7 @@ func NewHealthHandler(log *zap.Logger, svc HealthService) *HealthHandler {
 // Ping
 // @Summary Проверка здоровья сервиса.
 // @Description Возвращает “pong”.
-// @Tags health
+// @Tags Health
 // @Produce json
 // @Success 200 {object} ResponseWithMessage "Success"
 // @Router /health/ping [get]

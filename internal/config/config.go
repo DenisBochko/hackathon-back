@@ -19,6 +19,8 @@ type Config struct {
 	Database   `yaml:"database"`
 	Redis      `yaml:"redis"`
 	HTTPServer `yaml:"http_server"`
+	Mailer     `yaml:"mailer"`
+	Key        `yaml:"key"`
 }
 
 type App struct {
@@ -94,8 +96,22 @@ type CORS struct {
 }
 
 type JWT struct {
-	AccessSecret  string `yaml:"access_secret"`
-	RefreshSecret string `yaml:"refresh_secret"`
+	AccessTokenTTL  time.Duration `yaml:"access_token_ttl"`
+	RefreshTokenTTL time.Duration `yaml:"refresh_token_ttl"`
+}
+
+type Mailer struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	From     string `yaml:"from"`
+	UseTLS   bool   `yaml:"use_tls"`
+}
+
+type Key struct {
+	PublicKey  string `yaml:"public"`
+	PrivateKey string `yaml:"private"`
 }
 
 func MustLoadConfig() *Config {

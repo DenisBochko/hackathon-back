@@ -3,6 +3,7 @@ version: '3'
 vars:
   APP_NAME: 'hackathon-back'
   APP_PATH_NAME: 'hackathon_back'
+  KEYGEN_PATH_NAME: 'keygen'
   CONFIG_PATH: './config/config.template.yml'
   GOLANGCI_LINT_VERSION: 'v2.3.0'
   TASKFILE_VERSION: 'latest'
@@ -50,9 +51,14 @@ tasks:
       - golangci-lint run ./... --config=.golangci-lint.yml
 
   swagger:
-    desc: "Автогенерация swagger-документации"
+    desc: "Генерация swagger-документации"
     cmds:
       - swag init --generalInfo cmd/{{.APP_PATH_NAME}}/main.go --output ./internal/docs --parseDependency
+
+  keygen:
+    desc: "Генерация public, private ECDSA ключей"
+    cmds:
+      - go run ./cmd/{{.KEYGEN_PATH_NAME}}
 
   run:
     desc: "Запускает приложение"

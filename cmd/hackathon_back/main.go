@@ -18,7 +18,12 @@ import (
 
 // @title Hackathon API
 // @version 0.1.0
-// @description API для Hackathon
+// @description Флоу авторизации: сначала пользователь регистрируется, в ответе получает модельку своего user и токен.
+// @description Токен + код с почты он отправляет на ручку confirm, если что-то идёт не так (токен истёк, не пришёл код на почту), то запрос нужно отправить на ручку resend-confirmation.
+// @description Далее уже можно авторизоваться, login/refresh/test-login выставляет в cookie access и refresh токены, фронтенду, ничего с ними делать не нужно, они сами по себе живут в браузере и отправляются при каждом запросе.
+// @description Специально для мобильного приложения при login/refresh/test-login токены дублируются в теле ответа.
+// @description При запросе к защищённым ручкам API мобильному приложению необходимо выставить заголовок Authorization: Bearer *access_token*.
+// @description При refresh мобильное приложение передаёт refresh токен в теле запроса.
 // @host localhost:8080
 // @BasePath /api/
 func main() {

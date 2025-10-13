@@ -99,9 +99,21 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "User successfully logged in",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/_ResponseWithMessage"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/TokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -159,7 +171,10 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "post": {
-                "description": "Получает refresh токен из cookies, проверяет его, если он не истёк, то выставляет новые access и refresh токены.",
+                "description": "Получает refresh токен из cookies (Для мобильного приложения нужно передать токен в теле запроса), проверяет его, если он не истёк, то выставляет новые access и refresh токены.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -167,9 +182,38 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Refresh jwt токенов.",
+                "parameters": [
+                    {
+                        "description": "Refresh токен (Нужно только при передаче токена из мобильного проложения!)",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RefreshRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "User successfully refreshed",
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/TokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
                         "schema": {
                             "$ref": "#/definitions/_ResponseWithMessage"
                         }
@@ -319,7 +363,7 @@ const docTemplate = `{
         },
         "/auth/test-login": {
             "post": {
-                "description": "Создаёт пользователя с рандомными данными, выставляет access токен в cookie.\nУчти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh работать не будет.\nИз этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.",
+                "description": "Создаёт пользователя с рандомными данными, выставляет access токен в cookie.\nУчти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh токен не выставляется и в теле возвращается пустая строка.\nИз этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.",
                 "produces": [
                     "application/json"
                 ],
@@ -329,9 +373,21 @@ const docTemplate = `{
                 "summary": "Тестовый единоразовый вход.",
                 "responses": {
                     "200": {
-                        "description": "User successfully logged in",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/_ResponseWithMessage"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/TokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
@@ -472,6 +528,16 @@ const docTemplate = `{
                 }
             }
         },
+        "RefreshRequest": {
+            "description": "Запрос, в котор передаёт refresh токен мобильное приложение",
+            "type": "object",
+            "properties": {
+                "refreshToken": {
+                    "description": "Refresh токен",
+                    "type": "string"
+                }
+            }
+        },
         "ResendRequest": {
             "description": "Запрос на переотправку кода подтверждения.",
             "type": "object",
@@ -484,6 +550,20 @@ const docTemplate = `{
                     "type": "string",
                     "format": "email",
                     "example": "Dimka228@gmail.com"
+                }
+            }
+        },
+        "TokenResponse": {
+            "description": "Ответ, содержащий access и refresh токены",
+            "type": "object",
+            "properties": {
+                "accessToken": {
+                    "description": "Access токен",
+                    "type": "string"
+                },
+                "refreshToken": {
+                    "description": "Refresh токен",
+                    "type": "string"
                 }
             }
         },
@@ -587,7 +667,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/",
 	Schemes:          []string{},
 	Title:            "Hackathon API",
-	Description:      "API для Hackathon",
+	Description:      "Флоу авторизации: сначала пользователь регистрируется, в ответе получает модельку своего user и токен.\nТокен + код с почты он отправляет на ручку confirm, если что-то идёт не так (токен истёк, не пришёл код на почту), то запрос нужно отправить на ручку resend-confirmation.\nДалее уже можно авторизоваться, login/refresh/test-login выставляет в cookie access и refresh токены, фронтенду, ничего с ними делать не нужно, они сами по себе живут в браузере и отправляются при каждом запросе.\nСпециально для мобильного приложения при login/refresh/test-login токены дублируются в теле ответа.\nПри запросе к защищённым ручкам API мобильному приложению необходимо выставить заголовок Authorization: Bearer *access_token*.\nПри refresh мобильное приложение передаёт refresh токен в теле запроса.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

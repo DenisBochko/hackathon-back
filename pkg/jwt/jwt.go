@@ -52,7 +52,7 @@ func NewToken(privateKey *ecdsa.PrivateKey, duration time.Duration, opts ...Toke
 	token := jwt.New(jwt.SigningMethodES256)
 
 	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(duration).Unix()
+	claims["exp"] = time.Now().UTC().Add(duration).Unix()
 
 	for _, opt := range opts {
 		opt(claims)

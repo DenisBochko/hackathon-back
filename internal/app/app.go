@@ -134,7 +134,7 @@ func New(cfg *config.Config, log *zap.Logger) (*App, error) {
 
 	hdl := initHandler(log, &cfg.JWT, svc)
 
-	httpServer := initHTTPServer(log, cfg, hdl)
+	httpServer := initHTTPServer(log, cfg, sec.PublicKey, hdl)
 
 	return &App{
 		Cfg:        cfg,
@@ -322,10 +322,11 @@ func initRepository(log *zap.Logger, db postgres.Postgres) *Repository {
 	}
 }
 
-func initHTTPServer(log *zap.Logger, cfg *config.Config, hdl *Handler) server.HTTPServer {
+func initHTTPServer(log *zap.Logger, cfg *config.Config, publicKey *ecdsa.PublicKey, hdl *Handler) server.HTTPServer {
 	router := route.SetupRouter(
 		log,
 		cfg,
+		publicKey,
 		hdl.HealthHandler,
 		hdl.AuthHandler,
 	)

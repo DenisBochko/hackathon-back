@@ -100,6 +100,13 @@ definitions:
     - email
     - password
     type: object
+  RefreshRequest:
+    description: Запрос, в котор передаёт refresh токен мобильное приложение
+    properties:
+      refreshToken:
+        description: Refresh токен
+        type: string
+    type: object
   ResendRequest:
     description: Запрос на переотправку кода подтверждения.
     properties:
@@ -110,6 +117,16 @@ definitions:
         type: string
     required:
     - email
+    type: object
+  TokenResponse:
+    description: Ответ, содержащий access и refresh токены
+    properties:
+      accessToken:
+        description: Access токен
+        type: string
+      refreshToken:
+        description: Refresh токен
+        type: string
     type: object
   User:
     description: Модель пользователя, хз что ещё сказать можно по этому поводу.
@@ -165,7 +182,13 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: API для Hackathon
+  description: |-
+    Флоу авторизации: сначала пользователь регистрируется, в ответе получает модельку своего user и токен.
+    Токен + код с почты он отправляет на ручку confirm, если что-то идёт не так (токен истёк, не пришёл код на почту), то запрос нужно отправить на ручку resend-confirmation.
+    Далее уже можно авторизоваться, login/refresh/test-login выставляет в cookie access и refresh токены, фронтенду, ничего с ними делать не нужно, они сами по себе живут в браузере и отправляются при каждом запросе.
+    Специально для мобильного приложения при login/refresh/test-login токены дублируются в теле ответа.
+    При запросе к защищённым ручкам API мобильному приложению необходимо выставить заголовок Authorization: Bearer *access_token*.
+    При refresh мобильное приложение передаёт refresh токен в теле запроса.
   title: Hackathon API
   version: 0.1.0
 paths:
@@ -226,9 +249,14 @@ paths:
       - application/json
       responses:
         "200":
-          description: User successfully logged in
+          description: OK
           schema:
-            $ref: '#/definitions/_ResponseWithMessage'
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/TokenResponse'
+              type: object
         "400":
           description: Invalid JSON body
           schema:
@@ -267,13 +295,33 @@ paths:
       - Auth
   /auth/refresh:
     post:
-      description: Получает refresh токен из cookies, проверяет его, если он не истёк,
-        то выставляет новые access и refresh токены.
+      consumes:
+      - application/json
+      description: Получает refresh токен из cookies (Для мобильного приложения нужно
+        передать токен в теле запроса), проверяет его, если он не истёк, то выставляет
+        новые access и refresh токены.
+      parameters:
+      - description: Refresh токен (Нужно только при передаче токена из мобильного
+          проложения!)
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: User successfully refreshed
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/TokenResponse'
+              type: object
+        "400":
+          description: Invalid JSON body
           schema:
             $ref: '#/definitions/_ResponseWithMessage'
         "401":
@@ -373,15 +421,20 @@ paths:
     post:
       description: |-
         Создаёт пользователя с рандомными данными, выставляет access токен в cookie.
-        Учти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh работать не будет.
+        Учти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh токен не выставляется и в теле возвращается пустая строка.
         Из этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.
       produces:
       - application/json
       responses:
         "200":
-          description: User successfully logged in
+          description: OK
           schema:
-            $ref: '#/definitions/_ResponseWithMessage'
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/TokenResponse'
+              type: object
         "500":
           description: Failed to login user
           schema:

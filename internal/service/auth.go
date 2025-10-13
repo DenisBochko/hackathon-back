@@ -28,7 +28,7 @@ import (
 
 const (
 	welcomeMessage             = "Добро пожаловать! Подтвердите регистрацию."
-	durationOfVerificationCode = 10 * time.Second
+	durationOfVerificationCode = 10 * time.Minute
 )
 
 const (
@@ -185,7 +185,7 @@ func (s *AuthService) Confirmation(ctx context.Context, incCode string, incToken
 		return apperrors.ErrInvalidVerificationCode
 	}
 
-	if token.ExpiresAt.Before(time.Now()) {
+	if token.ExpiresAt.Before(time.Now().UTC()) {
 		return apperrors.ErrInvalidVerificationToken
 	}
 
@@ -212,11 +212,11 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (access
 	}
 
 	accessToken, err = jwt.NewToken(s.privateKey, s.accessTokenTTL,
-		jwt.WithClaim("uid", user.ID),
-		jwt.WithClaim("email", user.Email),
-		jwt.WithClaim("name", user.Username),
-		jwt.WithClaim("confirmed", user.Confirmed),
-		jwt.WithClaim("role", user.Role),
+		jwt.WithClaim(model.UserUIDKey, user.ID),
+		jwt.WithClaim(model.UserEmailKey, user.Email),
+		jwt.WithClaim(model.UserNameKey, user.Username),
+		jwt.WithClaim(model.UserConfirmedKey, user.Confirmed),
+		jwt.WithClaim(model.UserRoleKey, user.Role),
 	)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate access token: %w", err)
@@ -258,11 +258,11 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (newAcce
 	}
 
 	newAccessToken, err = jwt.NewToken(s.privateKey, s.accessTokenTTL,
-		jwt.WithClaim("uid", user.ID),
-		jwt.WithClaim("email", user.Email),
-		jwt.WithClaim("name", user.Username),
-		jwt.WithClaim("confirmed", user.Confirmed),
-		jwt.WithClaim("role", user.Role),
+		jwt.WithClaim(model.UserUIDKey, user.ID),
+		jwt.WithClaim(model.UserEmailKey, user.Email),
+		jwt.WithClaim(model.UserNameKey, user.Username),
+		jwt.WithClaim(model.UserConfirmedKey, user.Confirmed),
+		jwt.WithClaim(model.UserRoleKey, user.Role),
 	)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to generate access token: %w", err)
@@ -333,7 +333,7 @@ func generateVerificationToken(user *model.User, duration time.Duration) (*model
 		UserID:    user.ID,
 		Token:     userToken,
 		Code:      userVerificationCode,
-		ExpiresAt: time.Now().Add(duration),
+		ExpiresAt: time.Now().UTC().Add(duration),
 	}, nil
 }
 

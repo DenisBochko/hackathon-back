@@ -232,7 +232,7 @@ func (h *AuthHandler) Confirmation(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param user body model.LoginRequest true "Данные для подтверждения входа"
-// @Success 200 {object} ResponseWithMessage "User successfully logged in"
+// @Success 200 {object} ResponseWithData{data=model.TokenResponse} “Success”
 // @Failure 400 {object} ResponseWithMessage "Invalid JSON body"
 // @Failure 401 {object} ResponseWithMessage "Invalid credential/User isn't confirmed"
 // @Failure 404 {object} ResponseWithMessage "User does not exist"
@@ -291,9 +291,12 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", true, true)
 	c.SetCookie("refresh", refreshToken, int(h.refreshTokenTTL.Seconds()), "/", "", true, true)
 
-	c.JSON(http.StatusOK, ResponseWithMessage{
-		Status:  StatusSuccess,
-		Message: "User successfully logged in",
+	c.JSON(http.StatusOK, ResponseWithData{
+		Status: StatusSuccess,
+		Data: model.TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
 	})
 }
 
@@ -320,10 +323,13 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 // Refresh
 // @Summary Refresh jwt токенов.
-// @Description Получает refresh токен из cookies, проверяет его, если он не истёк, то выставляет новые access и refresh токены.
+// @Description Получает refresh токен из cookies (Для мобильного приложения нужно передать токен в теле запроса), проверяет его, если он не истёк, то выставляет новые access и refresh токены.
 // @Tags Auth
+// @Accept json
 // @Produce json
-// @Success 200 {object} ResponseWithMessage "User successfully refreshed"
+// @Param token body model.RefreshRequest true "Refresh токен (Нужно только при передаче токена из мобильного проложения!)"
+// @Success 200 {object} ResponseWithData{data=model.TokenResponse} “Success”
+// @Failure 400 {object} ResponseWithMessage "Invalid JSON body"
 // @Failure 401 {object} ResponseWithMessage "Refresh token expired"
 // @Failure 404 {object} ResponseWithMessage "User does not exist"
 // @Failure 500 {object} ResponseWithMessage "Failed to refresh user"
@@ -331,17 +337,36 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) Refresh(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	cookie, err := c.Cookie("refresh")
-	if err != nil {
+	var refreshToken string
+
+	if cookie, err := c.Cookie("refresh"); err == nil {
+		refreshToken = cookie
+	}
+
+	if refreshToken == "" {
+		var req model.RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, ResponseWithMessage{
+				Status:  StatusErr,
+				Message: err.Error(),
+			})
+
+			return
+		}
+
+		refreshToken = req.RefreshToken
+	}
+
+	if refreshToken == "" {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, ResponseWithMessage{
 			Status:  StatusNotPermitted,
-			Message: err.Error(),
+			Message: "Missing refresh token",
 		})
 
 		return
 	}
 
-	accessToken, refreshToken, err := h.svc.Refresh(ctx, cookie)
+	accessToken, refreshToken, err := h.svc.Refresh(ctx, refreshToken)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrRefreshTokenExpired) {
 			c.JSON(http.StatusUnauthorized, ResponseWithMessage{
@@ -372,20 +397,23 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", true, true)
 	c.SetCookie("refresh", refreshToken, int(h.refreshTokenTTL.Seconds()), "/", "", true, true)
 
-	c.JSON(http.StatusOK, ResponseWithMessage{
-		Status:  StatusSuccess,
-		Message: "User successfully refreshed",
+	c.JSON(http.StatusOK, ResponseWithData{
+		Status: StatusSuccess,
+		Data: model.TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
 	})
 }
 
 // TestLogin
 // @Summary Тестовый единоразовый вход.
 // @Description Создаёт пользователя с рандомными данными, выставляет access токен в cookie.
-// @Description	Учти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh работать не будет.
+// @Description	Учти, читатель, пользователь здесь не сохраняется в бд, т.е. refresh токен не выставляется и в теле возвращается пустая строка.
 // @Description	Из этого можно сделать вывод, что этот логин будет действителен примерно 20 минут.
 // @Tags Auth
 // @Produce json
-// @Success 200 {object} ResponseWithMessage "User successfully logged in"
+// @Success 200 {object} ResponseWithData{data=model.TokenResponse} “Success”
 // @Failure 500 {object} ResponseWithMessage "Failed to login user"
 // @Router /auth/test-login [post]
 func (h *AuthHandler) TestLogin(c *gin.Context) {
@@ -403,8 +431,11 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", true, true)
 
-	c.JSON(http.StatusOK, ResponseWithMessage{
-		Status:  StatusSuccess,
-		Message: "User successfully logged in",
+	c.JSON(http.StatusOK, ResponseWithData{
+		Status: StatusSuccess,
+		Data: model.TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: "",
+		},
 	})
 }

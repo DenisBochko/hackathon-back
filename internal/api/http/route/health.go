@@ -9,7 +9,10 @@ type HealthHandler interface {
 	Health(c *gin.Context)
 }
 
-func RegisterHealth(g *gin.RouterGroup, h HealthHandler) {
+func RegisterHealth(g *gin.RouterGroup, h HealthHandler, jwtAuthMiddleware gin.HandlerFunc) {
 	g.GET("", h.Health)
 	g.GET("/ping", h.Ping)
+
+	protected := g.Group("/protected", jwtAuthMiddleware)
+	protected.GET("/ping", h.Ping)
 }

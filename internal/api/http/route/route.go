@@ -1,6 +1,7 @@
 package route
 
 import (
+	"crypto/ecdsa"
 	"io"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,7 @@ const maxMultipartMemory = 1 << 30
 func SetupRouter(
 	log *zap.Logger,
 	cfg *config.Config,
+	publicKey *ecdsa.PublicKey,
 	healthHdl HealthHandler,
 	authHdl AuthHandler,
 ) *gin.Engine {
@@ -30,6 +32,8 @@ func SetupRouter(
 	router.Use(middleware.RequestTimeout(cfg.Timeout.Request))
 	router.Use(middleware.CORS(cfg.CORS))
 
+	jwtAuthMiddleware := middleware.JWTAuth(publicKey)
+
 	router.HandleMethodNotAllowed = true
 	router.NoMethod(handler.NoMethod)
 	router.NoRoute(handler.NoRoute)
@@ -40,7 +44,7 @@ func SetupRouter(
 	RegisterDock(docsPath)
 
 	healthPath := basePath.Group("/health")
-	RegisterHealth(healthPath, healthHdl)
+	RegisterHealth(healthPath, healthHdl, jwtAuthMiddleware)
 
 	authPath := basePath.Group("/auth")
 	RegisterAuth(authPath, authHdl)

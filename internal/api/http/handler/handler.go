@@ -9,8 +9,6 @@ import (
 const (
 	StatusErr          = "error"
 	StatusSuccess      = "success"
-	StatusConflict     = "conflict"
-	StatusTimeout      = "timeout"
 	StatusNotAvailable = "not available"
 	StatusNotPermitted = "not permitted"
 	StatusForbidden    = "forbidden"

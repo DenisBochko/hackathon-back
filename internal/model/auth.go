@@ -54,3 +54,16 @@ type ConfirmationRequest struct {
 	Code  string `binding:"required" example:"0228" json:"code"`                        // Код, полученный с email
 	Token string `binding:"required" example:"89as098ga0998=asdg=+afgk==" json:"token"` // Токен, который вернул handler register/resend-confirmation
 } // @Name ConfirmationRequest
+
+// TokenResponse
+// @Description Ответ, содержащий access и refresh токены
+type TokenResponse struct {
+	AccessToken  string `json:"accessToken"`  // Access токен
+	RefreshToken string `json:"refreshToken"` // Refresh токен
+} // @Name TokenResponse
+
+// RefreshRequest
+// @Description Запрос, в котор передаёт refresh токен мобильное приложение
+type RefreshRequest struct {
+	RefreshToken string `json:"refreshToken"` // Refresh токен
+} // @Name RefreshRequest

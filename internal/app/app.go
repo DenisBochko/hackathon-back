@@ -37,6 +37,7 @@ type HealthService interface {
 
 type HealthHandler interface {
 	Ping(c *gin.Context)
+	ProtectedPing(c *gin.Context)
 	Health(c *gin.Context)
 }
 

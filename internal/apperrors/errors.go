@@ -17,4 +17,7 @@ var (
 	ErrUserIsNotConfirmed       = errors.New("user isn't confirmed")
 	ErrInvalidCredentials       = errors.New("invalid credentials")
 	ErrRefreshTokenExpired      = errors.New("refresh token expired")
+
+	ErrContextValueDoesNotExist = errors.New("context value does not exist")
+	ErrContextValueInvalidType  = errors.New("invalid context value type")
 )

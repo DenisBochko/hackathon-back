@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"hackathon-back/internal/apperrors"
+	"hackathon-back/internal/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 const (
@@ -13,6 +16,27 @@ const (
 	StatusNotPermitted = "not permitted"
 	StatusForbidden    = "forbidden"
 )
+
+type BaseHandler struct{}
+
+func (h *BaseHandler) GetUserID(c *gin.Context) (uuid.UUID, error) {
+	userIDValue, exists := c.Get(model.UserUIDKey)
+	if !exists {
+		return [16]byte{}, apperrors.ErrContextValueDoesNotExist
+	}
+
+	userID, ok := userIDValue.(string)
+	if !ok {
+		return [16]byte{}, apperrors.ErrContextValueInvalidType
+	}
+
+	uid, err := uuid.Parse(userID)
+	if err != nil {
+		return [16]byte{}, apperrors.ErrContextValueInvalidType
+	}
+
+	return uid, nil
+}
 
 // ResponseWithData
 // @Description Общий ответ success/error, содержащий произвольные данные.

@@ -455,4 +455,24 @@ paths:
       summary: Проверка здоровья сервиса.
       tags:
       - Health
+  /health/protected/ping:
+    get:
+      description: Возвращает “pong” + uuid пользователя из JWT, который её вызвал.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success + id
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "401":
+          description: Invalid or missing JWT token
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Проверка здоровья сервиса, используя JWT.
+      tags:
+      - Health
 swagger: "2.0"

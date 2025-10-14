@@ -62,7 +62,7 @@ http_server:
     access_token_ttl: 20m
     refresh_token_ttl: 43200m
 mailer:
-  host: "mailhog"
+  host: "hackathon-mailhog"
   port: 1025
   username: ""
   password: ""

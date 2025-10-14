@@ -179,7 +179,7 @@ definitions:
     - role
     - updatedAt
     type: object
-host: localhost:8080
+host: /
 info:
   contact: {}
   description: |-

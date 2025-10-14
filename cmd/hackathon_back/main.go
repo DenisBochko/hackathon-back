@@ -37,8 +37,8 @@ func main() {
 
 	docs.SwaggerInfo.Title = cfg.ServiceName
 	docs.SwaggerInfo.Version = cfg.Version
-	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", cfg.HTTPServer.Host, cfg.HTTPServer.Port)
 	docs.SwaggerInfo.BasePath = cfg.BasePath
+	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%d", cfg.HTTPServer.Port)
 
 	loggerCfg := &logger.Config{
 		Level:      cfg.Level,

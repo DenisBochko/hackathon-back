@@ -10,7 +10,7 @@ log:
     max_backups: 3
     max_age: 7
 database:
-  host: "postgres"
+  host: "hackathon-postgres"
   port: 5432
   user: "admin"
   password: "admin"
@@ -23,7 +23,7 @@ database:
     auto_apply: true
 redis:
   enable: true
-  host: "redis"
+  host: "hackathon-redis"
   port: 6379
   password: "admin"
   db: 0

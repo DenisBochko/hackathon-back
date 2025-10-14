@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:17
-    container_name: hackathon-postgres
+    container_name: hack-dev-postgres
     environment:
       POSTGRES_PASSWORD: "admin"
       POSTGRES_USER: "admin"
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:8.2.1
-    container_name: hackathon-redis
+    container_name: hack-dev-redis
     environment:
       - REDIS_PASSWORD=admin
     ports:
@@ -33,27 +33,10 @@ services:
 
   mailhog:
     image: mailhog/mailhog
-    container_name: hackathon-mailhog
+    container_name: hack-dev-mailhog
     ports:
       - "1025:1025" # SMTP
       - "8025:8025" # Web UI
-
-  hackathon-back:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: hackathon-back
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./config/config.docker.yml:/app/config/config.docker.yml
-    environment:
-      CONFIG_PATH: "/app/config/config.docker.yml"
 
 volumes:
   postgres_data:

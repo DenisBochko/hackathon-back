@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:17
+    container_name: hack-dev-postgres
+    environment:
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_USER: "admin"
+      POSTGRES_DB: "hackathon-back"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:8.2.1
+    container_name: hack-dev-redis
+    environment:
+      - REDIS_PASSWORD=admin
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "admin", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: hack-dev-mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+
+volumes:
+  postgres_data:
+  redis_data:

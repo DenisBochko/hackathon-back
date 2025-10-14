@@ -2,13 +2,14 @@ package middleware
 
 import (
 	"crypto/ecdsa"
-	"hackathon-back/internal/api/http/handler"
-	"hackathon-back/internal/model"
-	"hackathon-back/pkg/jwt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"hackathon-back/internal/api/http/handler"
+	"hackathon-back/internal/model"
+	"hackathon-back/pkg/jwt"
 )
 
 func JWTAuth(publicKey *ecdsa.PublicKey) gin.HandlerFunc {

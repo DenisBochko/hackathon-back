@@ -1,12 +1,13 @@
 package handler
 
 import (
-	"hackathon-back/internal/apperrors"
-	"hackathon-back/internal/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"hackathon-back/internal/apperrors"
+	"hackathon-back/internal/model"
 )
 
 const (

@@ -309,11 +309,28 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Failure 500 {object} ResponseWithMessage "Failed to logout"
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	_ = c.Request.Context()
+	ctx := c.Request.Context()
 
-	// TODO: нужно всё таки удалять refresh токен из redis
-	c.SetCookie("access", "", -1, "/", "", true, true)
-	c.SetCookie("refresh", "", -1, "/", "", true, true)
+	// Получаем refresh токен из cookie
+	refreshToken, err := c.Cookie("refresh")
+	if err != nil {
+		// Если нет refresh токена, всё равно очищаем cookies
+		h.clearCookies(c)
+		c.JSON(http.StatusOK, ResponseWithMessage{
+			Status:  StatusSuccess,
+			Message: "Logged out",
+		})
+		return
+	}
+
+	// Удаляем refresh токен из Redis
+	if err := h.svc.Logout(ctx, refreshToken); err != nil {
+
+		h.log.Error("Failed to delete refresh token from redis",
+			zap.Error(err),
+			zap.String("refresh", refreshToken),
+		)
+	}
 
 	c.JSON(http.StatusOK, ResponseWithMessage{
 		Status:  StatusSuccess,
@@ -438,4 +455,9 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 			RefreshToken: "",
 		},
 	})
+}
+
+func (h *AuthHandler) clearCookies(c *gin.Context) {
+	c.SetCookie("access", "", -1, "/", "", true, true)
+	c.SetCookie("refresh", "", -1, "/", "", true, true)
 }

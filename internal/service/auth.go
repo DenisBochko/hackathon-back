@@ -232,9 +232,24 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (access
 }
 
 // Logout
-// TODO: refresh токен удалять из redis, это нужно реализовать.
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
-	return fmt.Errorf("logout not implemented yet")
+	if refreshToken == "" {
+		return fmt.Errorf("invalid refresh token")
+	}
+
+	// Просто удаляем токен из Redis по его хэшу
+	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(refreshToken)))
+	redisKey := "refresh_token:" + tokenHash
+
+	err := s.rdb.Del(ctx, redisKey)
+	if err != nil {
+		return fmt.Errorf("failed to delete refresh token: %w", err)
+	}
+
+	s.log.Info("refresh token deleted", zap.String("refreshToken", refreshToken))
+
+	return nil
+
 }
 
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (newAccessToken, newRefreshToken string, err error) {

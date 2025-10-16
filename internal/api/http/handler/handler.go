@@ -11,11 +11,14 @@ import (
 )
 
 const (
-	StatusErr          = "error"
-	StatusSuccess      = "success"
-	StatusNotAvailable = "not available"
-	StatusNotPermitted = "not permitted"
-	StatusForbidden    = "forbidden"
+	StatusErr           = "error"
+	StatusSuccess       = "success"
+	StatusNotAvailable  = "not available"
+	StatusNotPermitted  = "not permitted"
+	StatusForbidden     = "forbidden"
+	StatusOK            = "ok"
+	StatusInvalidInput  = "invalid_input"
+	StatusInternalError = "internal_error"
 )
 
 type BaseHandler struct{}

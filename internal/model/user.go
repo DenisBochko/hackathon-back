@@ -6,6 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	RoleAdmin   = "admin"
+	RoleManager = "manager"
+)
+
 // User
 // @Description Модель пользователя, хз что ещё сказать можно по этому поводу.
 type User struct {

@@ -2,6 +2,7 @@ package route
 
 import (
 	"crypto/ecdsa"
+	"hackathon-back/internal/model"
 	"io"
 
 	"github.com/gin-gonic/gin"
@@ -20,14 +21,15 @@ func SetupRouter(
 	publicKey *ecdsa.PublicKey,
 	healthHdl HealthHandler,
 	authHdl AuthHandler,
+	userHdl UserHandler,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
 
 	router := gin.Default()
-
 	router.MaxMultipartMemory = maxMultipartMemory
 
+	// middleware
 	router.Use(middleware.Logger(log))
 	router.Use(middleware.RequestTimeout(cfg.Timeout.Request))
 	router.Use(middleware.CORS(cfg.CORS))
@@ -40,6 +42,7 @@ func SetupRouter(
 
 	basePath := router.Group(cfg.BasePath)
 
+	// docs, health, auth
 	docsPath := basePath.Group("/docs")
 	RegisterDock(docsPath)
 
@@ -48,6 +51,14 @@ func SetupRouter(
 
 	authPath := basePath.Group("/auth")
 	RegisterAuth(authPath, authHdl)
+
+	//  Админка / пользователи
+	adminMiddlewares := []gin.HandlerFunc{
+		middleware.JWTAuth(publicKey),
+		middleware.RequireRoles(model.RoleAdmin, model.RoleManager),
+	}
+
+	RegisterAdminUserRoutes(basePath, userHdl, adminMiddlewares...)
 
 	return router
 }

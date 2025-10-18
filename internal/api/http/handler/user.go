@@ -58,7 +58,17 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.DeleteUser(ctx, uri.ID); err != nil {
+	userUID, err := uuid.Parse(uri.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ResponseWithMessage{
+			Status:  StatusErr,
+			Message: err.Error(),
+		})
+
+		return
+	}
+
+	if err := h.svc.DeleteUser(ctx, userUID); err != nil {
 		c.JSON(http.StatusInternalServerError, ResponseWithMessage{
 			Status:  StatusInternalError,
 			Message: "Failed to delete user",
@@ -68,7 +78,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ResponseWithMessage{
-		Status:  StatusOK,
+		Status:  StatusSuccess,
 		Message: "User deleted successfully",
 	})
 }
@@ -98,7 +108,17 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 		return
 	}
 
-	if err := h.svc.BlockUser(ctx, uri.ID); err != nil {
+	userUID, err := uuid.Parse(uri.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ResponseWithMessage{
+			Status:  StatusErr,
+			Message: err.Error(),
+		})
+
+		return
+	}
+
+	if err := h.svc.BlockUser(ctx, userUID); err != nil {
 		c.JSON(http.StatusInternalServerError, ResponseWithMessage{
 			Status:  StatusInternalError,
 			Message: err.Error(),
@@ -108,7 +128,7 @@ func (h *UserHandler) BlockUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ResponseWithMessage{
-		Status:  StatusOK,
+		Status:  StatusSuccess,
 		Message: "User blocked successfully",
 	})
 }
@@ -137,7 +157,17 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.svc.GetUser(ctx, uri.ID)
+	userUID, err := uuid.Parse(uri.ID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ResponseWithMessage{
+			Status:  StatusErr,
+			Message: err.Error(),
+		})
+
+		return
+	}
+
+	user, err := h.svc.GetUser(ctx, userUID)
 	if err != nil {
 		if errors.Is(err, apperrors.ErrUserDoesNotExist) {
 			c.JSON(http.StatusNotFound, ResponseWithMessage{
@@ -157,7 +187,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ResponseWithData{
-		Status: StatusOK,
+		Status: StatusSuccess,
 		Data:   user,
 	})
 }
@@ -220,7 +250,7 @@ func (h *UserHandler) GetUserJWT(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ResponseWithData{
-		Status: StatusOK,
+		Status: StatusSuccess,
 		Data:   user,
 	})
 }

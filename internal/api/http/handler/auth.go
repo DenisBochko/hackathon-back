@@ -311,25 +311,25 @@ func (h *AuthHandler) Login(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	// Получаем refresh токен из cookie
 	refreshToken, err := c.Cookie("refresh")
 	if err != nil {
-		// Если нет refresh токена, всё равно очищаем cookies
 		h.clearCookies(c)
+
 		c.JSON(http.StatusOK, ResponseWithMessage{
 			Status:  StatusSuccess,
 			Message: "Logged out",
 		})
+
 		return
 	}
 
-	// Удаляем refresh токен из Redis
 	if err := h.svc.Logout(ctx, refreshToken); err != nil {
 		h.log.Error("Failed to delete refresh token from redis",
 			zap.Error(err),
-			zap.String("refresh", refreshToken),
 		)
 	}
+
+	h.clearCookies(c)
 
 	c.JSON(http.StatusOK, ResponseWithMessage{
 		Status:  StatusSuccess,

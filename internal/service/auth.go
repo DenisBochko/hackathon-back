@@ -42,13 +42,20 @@ const (
 type AuthRepository interface {
 	Pool() *pgxpool.Pool
 
-	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
-	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
-	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
 	UpdateUserAsConfirmed(ctx context.Context, ext repository.RepoExtension, userID uuid.UUID) error
 	InsertVerificationToken(ctx context.Context, ext repository.RepoExtension, verificationToken *model.VerificationToken) error
 	SelectVerificationToken(ctx context.Context, ext repository.RepoExtension, token []byte) (*model.VerificationToken, error)
 	DeleteVerificationTokenByUserID(ctx context.Context, ext repository.RepoExtension, userID uuid.UUID) error
+}
+
+type UserRepository interface {
+	Pool() *pgxpool.Pool
+
+	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
+	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
+	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
+	Delete(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
+	Block(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
 }
 
 type AuthService struct {
@@ -56,6 +63,7 @@ type AuthService struct {
 	publicKey       *ecdsa.PublicKey
 	privateKey      *ecdsa.PrivateKey
 	authRepo        AuthRepository
+	userRepo        UserRepository
 	mlr             mailer.Mailer
 	rdb             redis.Redis
 	accessTokenTTL  time.Duration
@@ -67,6 +75,7 @@ func NewAuthService(
 	publicKey *ecdsa.PublicKey,
 	privateKey *ecdsa.PrivateKey,
 	authRepo AuthRepository,
+	userRepo UserRepository,
 	mlr mailer.Mailer,
 	rdb redis.Redis,
 	accessTokenTTL time.Duration,
@@ -77,6 +86,7 @@ func NewAuthService(
 		publicKey:       publicKey,
 		privateKey:      privateKey,
 		authRepo:        authRepo,
+		userRepo:        userRepo,
 		mlr:             mlr,
 		rdb:             rdb,
 		accessTokenTTL:  accessTokenTTL,
@@ -115,7 +125,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 		_ = tx.Rollback(ctx)
 	}()
 
-	user, err = s.authRepo.InsertUser(ctx, tx, user)
+	user, err = s.userRepo.InsertUser(ctx, tx, user)
 	if err != nil {
 		return nil, []byte{}, fmt.Errorf("failed to insert user: %w", err)
 	}
@@ -137,7 +147,7 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 }
 
 func (s *AuthService) ResendConfirmation(ctx context.Context, email string) ([]byte, error) {
-	user, err := s.authRepo.SelectUserByEmail(ctx, nil, email)
+	user, err := s.userRepo.SelectUserByEmail(ctx, nil, email)
 	if err != nil {
 		return []byte{}, fmt.Errorf("failed to select user: %w", err)
 	}
@@ -197,7 +207,7 @@ func (s *AuthService) Confirmation(ctx context.Context, incCode string, incToken
 }
 
 func (s *AuthService) Login(ctx context.Context, email, password string) (accessToken, refreshToken string, err error) {
-	user, err := s.authRepo.SelectUserByEmail(ctx, nil, email)
+	user, err := s.userRepo.SelectUserByEmail(ctx, nil, email)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to select user: %w", err)
 	}
@@ -231,22 +241,10 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (access
 	return accessToken, refreshToken, nil
 }
 
-// Logout
 func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
-	if refreshToken == "" {
-		return fmt.Errorf("invalid refresh token")
-	}
-
-	// Просто удаляем токен из Redis по его хэшу
-	tokenHash := fmt.Sprintf("%x", sha256.Sum256([]byte(refreshToken)))
-	redisKey := "refresh_token:" + tokenHash
-
-	err := s.rdb.Del(ctx, redisKey)
-	if err != nil {
+	if err := s.rdb.RDB().Del(ctx, refreshToken).Err(); err != nil {
 		return fmt.Errorf("failed to delete refresh token: %w", err)
 	}
-
-	s.log.Info("refresh token deleted", zap.String("refreshToken", refreshToken))
 
 	return nil
 }
@@ -266,7 +264,7 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (newAcce
 		return "", "", fmt.Errorf("failed to parse refresh token: %w", err)
 	}
 
-	user, err := s.authRepo.SelectUserByID(ctx, nil, uid)
+	user, err := s.userRepo.SelectUserByID(ctx, nil, uid)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to select user: %w", err)
 	}

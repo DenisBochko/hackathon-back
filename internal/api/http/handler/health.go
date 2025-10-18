@@ -55,6 +55,8 @@ func (h *HealthHandler) Ping(c *gin.Context) {
 // @Security AccessToken
 // @Security RefreshToken
 // @Success 200 {object} ResponseWithMessage "Success + id"
+// @Failure 401 {object} ResponseWithMessage "Invalid or missing token"
+// @Failure 403 {object} ResponseWithMessage "Invalid user data format"
 // @Failure 401 {object} ResponseWithMessage "Invalid or missing JWT token"
 // @Router /health/protected/ping [get]
 func (h *HealthHandler) ProtectedPing(c *gin.Context) {

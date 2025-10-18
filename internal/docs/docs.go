@@ -145,7 +145,10 @@ const docTemplate = `{
         },
         "/auth/logout": {
             "post": {
-                "description": "Аннигиляция access и refresh токена.",
+                "description": "Аннигиляция access и refresh токена.\nДля web-клиентов токен автоматически берётся из cookies, затем access и refresh токены сбрасываются.\nДля мобильного клиента .",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -153,9 +156,26 @@ const docTemplate = `{
                     "Auth"
                 ],
                 "summary": "Logout пользователя.",
+                "parameters": [
+                    {
+                        "description": "Refresh токен (Нужно только при передаче токена из мобильного проложения!)",
+                        "name": "token",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RefreshRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Logged out",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid JSON body",
                         "schema": {
                             "$ref": "#/definitions/_ResponseWithMessage"
                         }
@@ -449,6 +469,237 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/_ResponseWithMessage"
                         }
+                    },
+                    "403": {
+                        "description": "Invalid user data format",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "get": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Получить пользователя по id. id берётся из JWT токена.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Получить пользователя по id.",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or missing token",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid user data format",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/block/{user_id}": {
+            "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Блокирует пользователя по id, доступно для пользователей с ролью manager и выше.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Блокирует пользователя по id.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to block user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{user_id}": {
+            "get": {
+                "description": "Получить пользователя по id.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Получить пользователя по id.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/User"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Удаляет пользователя по id, доступно для пользователей с ролью manager и выше.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Удаляет пользователя по id.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete user",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
                     }
                 }
             }
@@ -644,7 +895,7 @@ const docTemplate = `{
                 "id": {
                     "description": "ID пользователя",
                     "type": "string",
-                    "example": "1"
+                    "example": "b4b03119-1290-44bc-b599-6a5e91d6611f"
                 },
                 "role": {
                     "description": "Роль пользователя",
@@ -697,7 +948,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "0.1.0",
-	Host:             "/",
+	Host:             "localhost:8080",
 	BasePath:         "/api/",
 	Schemes:          []string{},
 	Title:            "Hackathon API",

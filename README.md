@@ -33,6 +33,7 @@ docker compose up -d --build
 - Документация находится по адресу: `http://localhost:8080/api/docs/swagger/index.html`
 - Тестовый smtp сервер: `http://localhost:8025`
 - Базовый путь `/api`
+- Дефолтный manager: "email": "manager@gmail.com", "password": "12345678"
 
 ## Общие рекомендации по разработке
 

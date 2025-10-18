@@ -303,17 +303,57 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // Logout
 // @Summary Logout пользователя.
 // @Description Аннигиляция access и refresh токена.
+// @Description Для web-клиентов токен автоматически берётся из cookies, затем access и refresh токены сбрасываются.
+// @Description Для мобильного клиента .
 // @Tags Auth
+// @Accept json
 // @Produce json
+// @Param token body model.RefreshRequest true "Refresh токен (Нужно только при передаче токена из мобильного проложения!)"
 // @Success 200 {object} ResponseWithMessage "Logged out"
+// @Failure 400 {object} ResponseWithMessage "Invalid JSON body"
 // @Failure 500 {object} ResponseWithMessage "Failed to logout"
 // @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
-	_ = c.Request.Context()
+	ctx := c.Request.Context()
 
-	// TODO: нужно всё таки удалять refresh токен из redis
-	c.SetCookie("access", "", -1, "/", "", true, true)
-	c.SetCookie("refresh", "", -1, "/", "", true, true)
+	var refreshToken string
+
+	if cookie, err := c.Cookie("refresh"); err == nil {
+		refreshToken = cookie
+	}
+
+	if refreshToken == "" {
+		var req model.RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			c.JSON(http.StatusBadRequest, ResponseWithMessage{
+				Status:  StatusErr,
+				Message: err.Error(),
+			})
+
+			return
+		}
+
+		refreshToken = req.RefreshToken
+	}
+
+	if refreshToken == "" {
+		h.clearCookies(c)
+
+		c.JSON(http.StatusOK, ResponseWithMessage{
+			Status:  StatusSuccess,
+			Message: "Logged out",
+		})
+
+		return
+	}
+
+	if err := h.svc.Logout(ctx, refreshToken); err != nil {
+		h.log.Error("Failed to delete refresh token from redis",
+			zap.Error(err),
+		)
+	}
+
+	h.clearCookies(c)
 
 	c.JSON(http.StatusOK, ResponseWithMessage{
 		Status:  StatusSuccess,
@@ -438,4 +478,9 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 			RefreshToken: "",
 		},
 	})
+}
+
+func (h *AuthHandler) clearCookies(c *gin.Context) {
+	c.SetCookie("access", "", -1, "/", "", true, true)
+	c.SetCookie("refresh", "", -1, "/", "", true, true)
 }

@@ -44,9 +44,6 @@ type HealthHandler interface {
 type AuthRepository interface {
 	Pool() *pgxpool.Pool
 
-	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
-	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
-	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
 	UpdateUserAsConfirmed(ctx context.Context, ext repository.RepoExtension, userID uuid.UUID) error
 	InsertVerificationToken(ctx context.Context, ext repository.RepoExtension, verificationToken *model.VerificationToken) error
 	SelectVerificationToken(ctx context.Context, ext repository.RepoExtension, token []byte) (*model.VerificationToken, error)
@@ -73,6 +70,16 @@ type AuthHandler interface {
 	TestLogin(c *gin.Context)
 }
 
+type UserRepository interface {
+	Pool() *pgxpool.Pool
+
+	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
+	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
+	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
+	Delete(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
+	Block(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
+}
+
 type App struct {
 	Cfg        *config.Config
 	Log        *zap.Logger
@@ -88,16 +95,19 @@ type App struct {
 type Repository struct {
 	HealthRepository HealthRepository
 	AuthRepository   AuthRepository
+	UserRepository   UserRepository
 }
 
 type Service struct {
 	HealthService HealthService
 	AuthService   AuthService
+	UserService   *service.UserService
 }
 
 type Handler struct {
 	HealthHandler HealthHandler
 	AuthHandler   AuthHandler
+	UserHandler   *handler.UserHandler
 }
 
 type Security struct {
@@ -280,46 +290,59 @@ func initSecurity(log *zap.Logger, cfg config.Key) (*Security, error) {
 
 func initHandler(log *zap.Logger, jwtCfg *config.JWT, svc *Service) *Handler {
 	healthHandler := handler.NewHealthHandler(log, svc.HealthService)
-
 	log.Debug("Health handler initialized")
 
 	authHandler := handler.NewAuthHandler(log, svc.AuthService, jwtCfg.AccessTokenTTL, jwtCfg.RefreshTokenTTL)
-
 	log.Debug("Auth handler initialized")
+
+	userHandler := handler.NewUserHandler(svc.UserService)
+	log.Debug("User handler initialized")
 
 	return &Handler{
 		HealthHandler: healthHandler,
 		AuthHandler:   authHandler,
+		UserHandler:   userHandler,
 	}
 }
 
-func initService(log *zap.Logger, jwtCfg *config.JWT, sec *Security, repo *Repository, mlr mailer.Mailer, rdb redis.Redis) *Service {
+func initService(
+	log *zap.Logger,
+	jwtCfg *config.JWT,
+	sec *Security,
+	repo *Repository,
+	mlr mailer.Mailer,
+	rdb redis.Redis,
+) *Service {
 	healthSvc := service.NewHealthService(log, repo.HealthRepository)
-
 	log.Debug("Health service initialized")
 
-	authSvc := service.NewAuthService(log, sec.PublicKey, sec.PrivateKey, repo.AuthRepository, mlr, rdb, jwtCfg.AccessTokenTTL, jwtCfg.RefreshTokenTTL)
-
+	authSvc := service.NewAuthService(log, sec.PublicKey, sec.PrivateKey, repo.AuthRepository, repo.UserRepository, mlr, rdb, jwtCfg.AccessTokenTTL, jwtCfg.RefreshTokenTTL)
 	log.Debug("Auth service initialized")
+
+	userSvc := service.NewUserService(repo.UserRepository)
+	log.Debug("User service initialized")
 
 	return &Service{
 		HealthService: healthSvc,
 		AuthService:   authSvc,
+		UserService:   userSvc,
 	}
 }
 
 func initRepository(log *zap.Logger, db postgres.Postgres) *Repository {
 	healthRepo := repository.NewHealthRepository(db.Pool())
-
 	log.Debug("Health repository initialized")
 
 	authRepo := repository.NewAuthRepository(db.Pool())
-
 	log.Debug("Auth repository initialized")
+
+	userRepo := repository.NewUserRepository(db.Pool())
+	log.Debug("User repository initialized")
 
 	return &Repository{
 		HealthRepository: healthRepo,
 		AuthRepository:   authRepo,
+		UserRepository:   userRepo,
 	}
 }
 
@@ -330,6 +353,7 @@ func initHTTPServer(log *zap.Logger, cfg *config.Config, publicKey *ecdsa.Public
 		publicKey,
 		hdl.HealthHandler,
 		hdl.AuthHandler,
+		hdl.UserHandler,
 	)
 
 	httpServer := server.NewHTTPServer(

@@ -2,7 +2,6 @@ package route
 
 import (
 	"crypto/ecdsa"
-	"hackathon-back/internal/model"
 	"io"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +10,7 @@ import (
 	"hackathon-back/internal/api/http/handler"
 	"hackathon-back/internal/api/http/middleware"
 	"hackathon-back/internal/config"
+	"hackathon-back/internal/model"
 )
 
 const maxMultipartMemory = 1 << 30

@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"hackathon-back/internal/api/http/handler"
-	"hackathon-back/internal/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
+	"hackathon-back/internal/api/http/handler"
+	"hackathon-back/internal/model"
 )
 
 func RequireRoles(allowedRoles ...string) gin.HandlerFunc {

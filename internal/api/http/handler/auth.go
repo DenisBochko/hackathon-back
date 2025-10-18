@@ -325,7 +325,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 	// Удаляем refresh токен из Redis
 	if err := h.svc.Logout(ctx, refreshToken); err != nil {
-
 		h.log.Error("Failed to delete refresh token from redis",
 			zap.Error(err),
 			zap.String("refresh", refreshToken),

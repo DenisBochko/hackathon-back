@@ -249,7 +249,6 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 	s.log.Info("refresh token deleted", zap.String("refreshToken", refreshToken))
 
 	return nil
-
 }
 
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (newAccessToken, newRefreshToken string, err error) {

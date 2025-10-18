@@ -10,8 +10,6 @@ import (
 type Redis interface {
 	RDB() *goredis.Client
 	Close() error
-
-	Del(ctx context.Context, keys string) error
 }
 
 type Config struct {
@@ -45,8 +43,4 @@ func (r *redis) RDB() *goredis.Client {
 
 func (r *redis) Close() error {
 	return r.rdb.Close()
-}
-
-func (r *redis) Del(ctx context.Context, key string) error {
-	return r.rdb.Del(ctx, key).Err()
 }

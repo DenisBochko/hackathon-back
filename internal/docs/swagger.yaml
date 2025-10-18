@@ -154,7 +154,7 @@ definitions:
         type: string
       id:
         description: ID пользователя
-        example: "1"
+        example: b4b03119-1290-44bc-b599-6a5e91d6611f
         type: string
       role:
         description: Роль пользователя
@@ -179,7 +179,7 @@ definitions:
     - role
     - updatedAt
     type: object
-host: /
+host: localhost:8080
 info:
   contact: {}
   description: |-
@@ -278,12 +278,29 @@ paths:
       - Auth
   /auth/logout:
     post:
-      description: Аннигиляция access и refresh токена.
+      consumes:
+      - application/json
+      description: |-
+        Аннигиляция access и refresh токена.
+        Для web-клиентов токен автоматически берётся из cookies, затем access и refresh токены сбрасываются.
+        Для мобильного клиента .
+      parameters:
+      - description: Refresh токен (Нужно только при передаче токена из мобильного
+          проложения!)
+        in: body
+        name: token
+        required: true
+        schema:
+          $ref: '#/definitions/RefreshRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Logged out
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid JSON body
           schema:
             $ref: '#/definitions/_ResponseWithMessage'
         "500":
@@ -469,10 +486,152 @@ paths:
           description: Invalid or missing JWT token
           schema:
             $ref: '#/definitions/_ResponseWithMessage'
+        "403":
+          description: Invalid user data format
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
       security:
       - AccessToken: []
       - RefreshToken: []
       summary: Проверка здоровья сервиса, используя JWT.
       tags:
       - Health
+  /user:
+    get:
+      description: Получить пользователя по id. id берётся из JWT токена.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/User'
+              type: object
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "401":
+          description: Invalid or missing token
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "403":
+          description: Invalid user data format
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to get user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Получить пользователя по id.
+      tags:
+      - User
+  /user/{user_id}:
+    delete:
+      description: Удаляет пользователя по id, доступно для пользователей с ролью
+        manager и выше.
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to delete user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Удаляет пользователя по id.
+      tags:
+      - User
+    get:
+      description: Получить пользователя по id.
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/User'
+              type: object
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to get user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      summary: Получить пользователя по id.
+      tags:
+      - User
+  /user/block/{user_id}:
+    post:
+      description: Блокирует пользователя по id, доступно для пользователей с ролью
+        manager и выше.
+      parameters:
+      - description: User UUID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to block user
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Блокирует пользователя по id.
+      tags:
+      - User
 swagger: "2.0"

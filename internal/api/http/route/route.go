@@ -10,6 +10,7 @@ import (
 	"hackathon-back/internal/api/http/handler"
 	"hackathon-back/internal/api/http/middleware"
 	"hackathon-back/internal/config"
+	"hackathon-back/internal/model"
 )
 
 const maxMultipartMemory = 1 << 30
@@ -20,19 +21,21 @@ func SetupRouter(
 	publicKey *ecdsa.PublicKey,
 	healthHdl HealthHandler,
 	authHdl AuthHandler,
+	userHdl UserHandler,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
 
 	router := gin.Default()
-
 	router.MaxMultipartMemory = maxMultipartMemory
 
+	// middleware
 	router.Use(middleware.Logger(log))
 	router.Use(middleware.RequestTimeout(cfg.Timeout.Request))
 	router.Use(middleware.CORS(cfg.CORS))
 
 	jwtAuthMiddleware := middleware.JWTAuth(publicKey)
+	allowManagerAndAdminMiddleware := middleware.RequireRoles(model.RoleManager, model.RoleAdmin)
 
 	router.HandleMethodNotAllowed = true
 	router.NoMethod(handler.NoMethod)
@@ -48,6 +51,9 @@ func SetupRouter(
 
 	authPath := basePath.Group("/auth")
 	RegisterAuth(authPath, authHdl)
+
+	userPath := basePath.Group("/user")
+	RegisterAdminUserRoutes(userPath, userHdl, jwtAuthMiddleware, allowManagerAndAdminMiddleware)
 
 	return router
 }

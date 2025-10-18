@@ -44,9 +44,6 @@ type HealthHandler interface {
 type AuthRepository interface {
 	Pool() *pgxpool.Pool
 
-	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
-	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
-	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
 	UpdateUserAsConfirmed(ctx context.Context, ext repository.RepoExtension, userID uuid.UUID) error
 	InsertVerificationToken(ctx context.Context, ext repository.RepoExtension, verificationToken *model.VerificationToken) error
 	SelectVerificationToken(ctx context.Context, ext repository.RepoExtension, token []byte) (*model.VerificationToken, error)
@@ -73,6 +70,16 @@ type AuthHandler interface {
 	TestLogin(c *gin.Context)
 }
 
+type UserRepository interface {
+	Pool() *pgxpool.Pool
+
+	InsertUser(ctx context.Context, ext repository.RepoExtension, user *model.User) (*model.User, error)
+	SelectUserByID(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) (*model.User, error)
+	SelectUserByEmail(ctx context.Context, ext repository.RepoExtension, email string) (*model.User, error)
+	Delete(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
+	Block(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
+}
+
 type App struct {
 	Cfg        *config.Config
 	Log        *zap.Logger
@@ -88,7 +95,7 @@ type App struct {
 type Repository struct {
 	HealthRepository HealthRepository
 	AuthRepository   AuthRepository
-	UserRepository   *repository.UserRepository
+	UserRepository   UserRepository
 }
 
 type Service struct {
@@ -309,7 +316,7 @@ func initService(
 	healthSvc := service.NewHealthService(log, repo.HealthRepository)
 	log.Debug("Health service initialized")
 
-	authSvc := service.NewAuthService(log, sec.PublicKey, sec.PrivateKey, repo.AuthRepository, mlr, rdb, jwtCfg.AccessTokenTTL, jwtCfg.RefreshTokenTTL)
+	authSvc := service.NewAuthService(log, sec.PublicKey, sec.PrivateKey, repo.AuthRepository, repo.UserRepository, mlr, rdb, jwtCfg.AccessTokenTTL, jwtCfg.RefreshTokenTTL)
 	log.Debug("Auth service initialized")
 
 	userSvc := service.NewUserService(repo.UserRepository)

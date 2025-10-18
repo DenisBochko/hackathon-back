@@ -35,6 +35,7 @@ func SetupRouter(
 	router.Use(middleware.CORS(cfg.CORS))
 
 	jwtAuthMiddleware := middleware.JWTAuth(publicKey)
+	allowManagerAndAdminMiddleware := middleware.RequireRoles(model.RoleManager, model.RoleAdmin)
 
 	router.HandleMethodNotAllowed = true
 	router.NoMethod(handler.NoMethod)
@@ -42,7 +43,6 @@ func SetupRouter(
 
 	basePath := router.Group(cfg.BasePath)
 
-	// docs, health, auth
 	docsPath := basePath.Group("/docs")
 	RegisterDock(docsPath)
 
@@ -52,13 +52,8 @@ func SetupRouter(
 	authPath := basePath.Group("/auth")
 	RegisterAuth(authPath, authHdl)
 
-	//  Админка / пользователи
-	adminMiddlewares := []gin.HandlerFunc{
-		middleware.JWTAuth(publicKey),
-		middleware.RequireRoles(model.RoleAdmin, model.RoleManager),
-	}
-
-	RegisterAdminUserRoutes(basePath, userHdl, adminMiddlewares...)
+	userPath := basePath.Group("/user")
+	RegisterAdminUserRoutes(userPath, userHdl, jwtAuthMiddleware, allowManagerAndAdminMiddleware)
 
 	return router
 }

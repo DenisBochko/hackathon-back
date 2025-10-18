@@ -28,5 +28,5 @@ type User struct {
 } // @Name User
 
 type UserIDPathParam struct {
-	ID uuid.UUID `path:"user_id" binding:"required,uuid" example:"b4b03119-1290-44bc-b599-6a5e91d6611f"`
+	ID uuid.UUID `uri:"user_id" binding:"required,uuid" example:"b4b03119-1290-44bc-b599-6a5e91d6611f"`
 }

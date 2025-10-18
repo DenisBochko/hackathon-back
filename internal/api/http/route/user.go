@@ -12,10 +12,10 @@ type UserHandler interface {
 }
 
 func RegisterAdminUserRoutes(g *gin.RouterGroup, h UserHandler, jwtAuthMiddleware, allowManagerAndAdminMiddleware gin.HandlerFunc) {
-	g.GET("", h.GetUser)
+	g.GET("/:user_id", h.GetUser)
 
 	protected := g.Group("", jwtAuthMiddleware)
-	protected.GET(":user_id", h.GetUserJWT)
+	protected.GET("", h.GetUserJWT)
 
 	adminOrManagerRequired := protected.Group("", allowManagerAndAdminMiddleware)
 	adminOrManagerRequired.DELETE(":user_id", h.DeleteUser)

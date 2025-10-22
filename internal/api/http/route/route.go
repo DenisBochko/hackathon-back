@@ -31,7 +31,7 @@ func SetupRouter(
 
 	// middleware
 	router.Use(middleware.Logger(log))
-	router.Use(middleware.RequestTimeout(cfg.Timeout.Request))
+	router.Use(middleware.RequestTimeout(cfg.HTTPServer.Timeout.Request))
 	router.Use(middleware.CORS(cfg.CORS))
 
 	jwtAuthMiddleware := middleware.JWTAuth(publicKey)

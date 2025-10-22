@@ -71,3 +71,11 @@ mailer:
 key:
   public: "./ecdsa_public.pem"
   private: "./ecdsa_private.pem"
+elastic:
+  addresses:
+    - "http://127.0.0.1:9200"
+  username: ""
+  password: ""
+  cloud_id: ""
+  api_key: ""
+  timeout: 5s

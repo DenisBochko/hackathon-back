@@ -21,6 +21,7 @@ type Config struct {
 	HTTPServer `yaml:"http_server"`
 	Mailer     `yaml:"mailer"`
 	Key        `yaml:"key"`
+	Elastic    `yaml:"elastic"`
 }
 
 type App struct {
@@ -112,6 +113,15 @@ type Mailer struct {
 type Key struct {
 	PublicKey  string `yaml:"public"`
 	PrivateKey string `yaml:"private"`
+}
+
+type Elastic struct {
+	Addresses []string      `yaml:"addresses"`
+	Username  string        `yaml:"username"`
+	Password  string        `yaml:"password"`
+	CloudID   string        `yaml:"cloud_id"`
+	APIKey    string        `yaml:"api_key"`
+	Timeout   time.Duration `yaml:"timeout"`
 }
 
 func MustLoadConfig() *Config {

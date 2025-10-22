@@ -288,6 +288,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", false, true)
 	c.SetCookie("refresh", refreshToken, int(h.refreshTokenTTL.Seconds()), "/", "", false, true)
 
@@ -434,6 +435,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", false, true)
 	c.SetCookie("refresh", refreshToken, int(h.refreshTokenTTL.Seconds()), "/", "", false, true)
 
@@ -469,6 +471,7 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("access", accessToken, int(h.accessTokenTTL.Seconds()), "/", "", false, true)
 
 	c.JSON(http.StatusOK, ResponseWithData{
@@ -481,6 +484,8 @@ func (h *AuthHandler) TestLogin(c *gin.Context) {
 }
 
 func (h *AuthHandler) clearCookies(c *gin.Context) {
+	c.SetSameSite(http.SameSiteLaxMode)
+
 	c.SetCookie("access", "", -1, "/", "", false, true)
 	c.SetCookie("refresh", "", -1, "/", "", false, true)
 }

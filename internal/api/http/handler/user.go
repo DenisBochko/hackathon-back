@@ -3,12 +3,12 @@ package handler
 import (
 	"context"
 	"errors"
-	"hackathon-back/internal/apperrors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"hackathon-back/internal/apperrors"
 	"hackathon-back/internal/model"
 )
 

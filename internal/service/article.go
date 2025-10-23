@@ -3,19 +3,20 @@ package service
 import (
 	"context"
 	"fmt"
-	"hackathon-back/internal/model"
 	"time"
 
 	"github.com/google/uuid"
+
+	"hackathon-back/internal/model"
 )
 
 type ArticleRepository interface {
-	EnsureIndex(ctx context.Context) error
-	Create(ctx context.Context, article *model.Article) error
-	Get(ctx context.Context, id string) (*model.Article, error)
-	Delete(ctx context.Context, id string) error
-	Patch(ctx context.Context, id string, fields map[string]interface{}) error
-	Search(ctx context.Context, query string) ([]model.SearchResult, error)
+	EnsureIndex(ctx context.Context) (err error)
+	Create(ctx context.Context, article *model.Article) (err error)
+	Get(ctx context.Context, id string) (article *model.Article, err error)
+	Delete(ctx context.Context, id string) (err error)
+	Patch(ctx context.Context, id string, fields map[string]interface{}) (err error)
+	Search(ctx context.Context, query string, from, size int, sort string) (results []model.SearchResult, err error)
 }
 
 type ArticleService struct {
@@ -28,17 +29,17 @@ func NewArticleService(articleRepo ArticleRepository) *ArticleService {
 	}
 }
 
-func (s *ArticleService) CreateArticle(ctx context.Context, articleRequest *model.ArticleCreateRequest) (*model.Article, error) {
+func (s *ArticleService) CreateArticle(ctx context.Context, req *model.ArticleCreateRequest) (*model.Article, error) {
+	now := time.Now().UTC()
 	article := &model.Article{
 		ID:        uuid.New(),
-		TitleRU:   articleRequest.TitleRU,
-		TitleEN:   articleRequest.TitleEN,
-		ContentRU: articleRequest.ContentRU,
-		ContentEN: articleRequest.ContentEN,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		TitleRU:   req.TitleRU,
+		TitleEN:   req.TitleEN,
+		ContentRU: req.ContentRU,
+		ContentEN: req.ContentEN,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
-
 	if err := s.articleRepo.Create(ctx, article); err != nil {
 		return nil, fmt.Errorf("failed to create article: %w", err)
 	}
@@ -63,19 +64,37 @@ func (s *ArticleService) DeleteArticle(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *ArticleService) UpdateArticle(ctx context.Context, id string, fields map[string]interface{}) error {
-	if err := s.articleRepo.Patch(ctx, id, fields); err != nil {
+func (s *ArticleService) UpdateArticle(ctx context.Context, id string, upd model.ArticleUpdate) error {
+	doc := make(map[string]interface{}, 4)
+	if upd.TitleRU != nil {
+		doc["title_ru"] = *upd.TitleRU
+	}
+	if upd.TitleEN != nil {
+		doc["title_en"] = *upd.TitleEN
+	}
+	if upd.ContentRU != nil {
+		doc["content_ru"] = *upd.ContentRU
+	}
+	if upd.ContentEN != nil {
+		doc["content_en"] = *upd.ContentEN
+	}
+
+	if len(doc) == 0 {
+		return nil
+	}
+
+	if err := s.articleRepo.Patch(ctx, id, doc); err != nil {
 		return fmt.Errorf("failed to update article: %w", err)
 	}
 
 	return nil
 }
 
-func (s *ArticleService) SearchArticles(ctx context.Context, query string) ([]model.SearchResult, error) {
-	articles, err := s.articleRepo.Search(ctx, query)
+func (s *ArticleService) SearchArticles(ctx context.Context, p model.SearchParams) ([]model.SearchResult, error) {
+	res, err := s.articleRepo.Search(ctx, p.Q, p.From, p.Size, p.Sort)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search articles: %w", err)
 	}
 
-	return articles, nil
+	return res, nil
 }

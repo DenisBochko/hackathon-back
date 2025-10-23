@@ -1,0 +1,1 @@
+ALTER TABLE sso.users DROP COLUMN photo_url;

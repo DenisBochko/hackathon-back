@@ -31,6 +31,7 @@ func NewArticleService(articleRepo ArticleRepository) *ArticleService {
 
 func (s *ArticleService) CreateArticle(ctx context.Context, req *model.ArticleCreateRequest) (*model.Article, error) {
 	now := time.Now().UTC()
+
 	article := &model.Article{
 		ID:        uuid.New(),
 		TitleRU:   req.TitleRU,
@@ -69,12 +70,15 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id string, upd model
 	if upd.TitleRU != nil {
 		doc["title_ru"] = *upd.TitleRU
 	}
+
 	if upd.TitleEN != nil {
 		doc["title_en"] = *upd.TitleEN
 	}
+
 	if upd.ContentRU != nil {
 		doc["content_ru"] = *upd.ContentRU
 	}
+
 	if upd.ContentEN != nil {
 		doc["content_en"] = *upd.ContentEN
 	}

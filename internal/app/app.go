@@ -364,9 +364,11 @@ func initHandler(log *zap.Logger, jwtCfg *config.JWT, svc *Service) *Handler {
 	log.Debug("Auth handler initialized")
 
 	userHandler := handler.NewUserHandler(svc.UserService)
+
 	log.Debug("User handler initialized")
 
 	articleHandler := handler.NewArticleHandler(svc.ArticleService)
+
 	log.Debug("Article handler initialized")
 
 	return &Handler{
@@ -392,9 +394,11 @@ func initService(
 	log.Debug("Auth service initialized")
 
 	userSvc := service.NewUserService(repo.UserRepository)
+
 	log.Debug("User service initialized")
 
 	articleSvc := service.NewArticleService(repo.ArticleRepository)
+
 	log.Debug("Article service initialized")
 
 	return &Service{
@@ -407,15 +411,19 @@ func initService(
 
 func initRepository(log *zap.Logger, db postgres.Postgres, es elasticsearch.Elasticsearch) *Repository {
 	healthRepo := repository.NewHealthRepository(db.Pool())
+
 	log.Debug("Health repository initialized")
 
 	authRepo := repository.NewAuthRepository(db.Pool())
+
 	log.Debug("Auth repository initialized")
 
 	userRepo := repository.NewUserRepository(db.Pool())
+
 	log.Debug("User repository initialized")
 
 	articleRepo := repository.NewElasticRepository(es.Client())
+
 	log.Debug("Article repository initialized")
 
 	return &Repository{

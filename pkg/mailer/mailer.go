@@ -67,6 +67,7 @@ func buildMessage(from, to, subject, htmlBody string) string {
 		"MIME-Version: 1.0",
 		"Content-Type: text/html; charset=UTF-8",
 	}
+
 	return strings.Join(headers, "\r\n") + "\r\n\r\n" + htmlBody
 }
 
@@ -76,6 +77,7 @@ func parseFromEmail(from string) string {
 			return strings.TrimSpace(from[i+1 : i+j])
 		}
 	}
+
 	return strings.TrimSpace(from)
 }
 
@@ -84,10 +86,12 @@ func sendTLS(addr, host string, auth smtp.Auth, from string, to string, msg stri
 	if err != nil {
 		return fmt.Errorf("dial tls: %w", err)
 	}
+
 	c, err := smtp.NewClient(conn, host)
 	if err != nil {
 		return fmt.Errorf("new client: %w", err)
 	}
+
 	defer func() {
 		_ = c.Close()
 	}()
@@ -102,15 +106,19 @@ func sendTLS(addr, host string, auth smtp.Auth, from string, to string, msg stri
 	if err := c.Mail(from); err != nil {
 		return fmt.Errorf("mail from: %w", err)
 	}
+
 	if err := c.Rcpt(to); err != nil {
 		return fmt.Errorf("rcpt to: %w", err)
 	}
+
 	w, err := c.Data()
 	if err != nil {
 		return fmt.Errorf("data: %w", err)
 	}
+
 	if _, err := w.Write([]byte(msg)); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
+
 	return w.Close()
 }

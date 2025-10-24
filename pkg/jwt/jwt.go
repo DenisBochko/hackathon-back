@@ -72,6 +72,7 @@ func ValidateToken(tokenString string, publicKey *ecdsa.PublicKey) (jwt.MapClaim
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+
 		return publicKey, nil
 	})
 	if err != nil {

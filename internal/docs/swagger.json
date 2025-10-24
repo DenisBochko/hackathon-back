@@ -9,6 +9,321 @@
     "host": "localhost:8080",
     "basePath": "/api/",
     "paths": {
+        "/article": {
+            "post": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Создать статью.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Создать статью.",
+                "parameters": [
+                    {
+                        "description": "Данные для создания статьи",
+                        "name": "article",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ArticleCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/Article"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid body param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get article",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/article/search": {
+            "get": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Полнотекстовый поиск по статьям.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Поиск статей по содержанию.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Строка поиска",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/hackathon-back_internal_model.SearchResult"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get articles",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/article/{article_id}": {
+            "get": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Получить статью по ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Получить статью по ID.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Article UUID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/_ResponseWithData"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/Article"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get article",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Удалить статью по ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Удалить статью.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Article UUID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete article",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "AccessToken": []
+                    },
+                    {
+                        "RefreshToken": []
+                    }
+                ],
+                "description": "Частично обновить статью. Некоторые поля могут быть пустыми, обновляются только те, которые не пустые.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Articles"
+                ],
+                "summary": "Частично обновить статью.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Article UUID",
+                        "name": "article_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Поля для обновления статьи",
+                        "name": "updateArticle",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ArticleCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid path param",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "Article not found",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update article",
+                        "schema": {
+                            "$ref": "#/definitions/_ResponseWithMessage"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/confirm": {
             "post": {
                 "description": "Принимает код с почты + временный токен, который вернул handler register/resend-confirmation.",
@@ -700,6 +1015,86 @@
         }
     },
     "definitions": {
+        "Article": {
+            "description": "модель статьи.",
+            "type": "object",
+            "required": [
+                "content_en",
+                "content_ru",
+                "createdAt",
+                "id",
+                "title_en",
+                "title_ru",
+                "updatedAt"
+            ],
+            "properties": {
+                "content_en": {
+                    "description": "Содержимое статьи на английском",
+                    "type": "string",
+                    "example": "Example"
+                },
+                "content_ru": {
+                    "description": "Содержимое статьи на русском",
+                    "type": "string",
+                    "example": "Пример"
+                },
+                "createdAt": {
+                    "description": "Timestamp создания аккаунта",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2006-01-02T15:04:05Z"
+                },
+                "id": {
+                    "description": "ID статьи (UUID)",
+                    "type": "string",
+                    "example": "b4b03119-1290-44bc-b599-6a5e91d6611f"
+                },
+                "title_en": {
+                    "description": "Заголовок статьи на английском языке",
+                    "type": "string",
+                    "example": "Example"
+                },
+                "title_ru": {
+                    "description": "Заголовок статьи на русском языке",
+                    "type": "string",
+                    "example": "Пример"
+                },
+                "updatedAt": {
+                    "description": "Timestamp последнего обновления аккаунта",
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2006-01-02T15:04:05Z"
+                }
+            }
+        },
+        "ArticleCreateRequest": {
+            "description": "Данные, передаваемые для создания статьи.",
+            "type": "object",
+            "required": [
+                "content_en",
+                "content_ru",
+                "title_en",
+                "title_ru"
+            ],
+            "properties": {
+                "content_en": {
+                    "description": "Содержимое статьи на английском",
+                    "type": "string"
+                },
+                "content_ru": {
+                    "description": "Содержимое статьи на русском",
+                    "type": "string"
+                },
+                "title_en": {
+                    "description": "Заголовок статьи на английском языке",
+                    "type": "string"
+                },
+                "title_ru": {
+                    "description": "Заголовок статьи на русском языке",
+                    "type": "string"
+                }
+            }
+        },
         "AuthRequest": {
             "description": "Данные, передаваемые в json для регистрации.",
             "type": "object",
@@ -933,6 +1328,23 @@
                 "status": {
                     "description": "Результат запроса",
                     "type": "string"
+                }
+            }
+        },
+        "hackathon-back_internal_model.SearchResult": {
+            "type": "object",
+            "properties": {
+                "article": {
+                    "$ref": "#/definitions/Article"
+                },
+                "highlight": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         }

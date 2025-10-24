@@ -18,6 +18,7 @@ func WithClaim(key string, value any) TokenOption {
 }
 
 // LoadECDSAPrivateKey loads the ECDSA private key (P-256)
+// nolint:gosec // me configure path to private key
 func LoadECDSAPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 	keyData, err := os.ReadFile(path)
 	if err != nil {
@@ -33,6 +34,7 @@ func LoadECDSAPrivateKey(path string) (*ecdsa.PrivateKey, error) {
 }
 
 // LoadECDSAPublicKey loads the ECDSA public key
+// nolint:gosec // me configure path to public key
 func LoadECDSAPublicKey(path string) (*ecdsa.PublicKey, error) {
 	keyData, err := os.ReadFile(path)
 	if err != nil {

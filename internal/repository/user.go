@@ -11,7 +11,6 @@ import (
 
 	"hackathon-back/internal/apperrors"
 	"hackathon-back/internal/model"
-	_ "hackathon-back/internal/model"
 )
 
 type UserRepository struct {
@@ -173,7 +172,7 @@ func (r *UserRepository) Block(ctx context.Context, ext RepoExtension, id uuid.U
 		WHERE id = $1
 	`
 
-	res, err := r.db.Exec(ctx, query, id)
+	res, err := ext.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

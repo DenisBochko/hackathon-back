@@ -81,7 +81,8 @@ func parseFromEmail(from string) string {
 	return strings.TrimSpace(from)
 }
 
-func sendTLS(addr, host string, auth smtp.Auth, from string, to string, msg string) error {
+// nolint:gosec // That's the way it's meant to be
+func sendTLS(addr, host string, auth smtp.Auth, from string, to string, msg string) (err error) {
 	conn, err := tls.Dial("tcp", addr, &tls.Config{ServerName: host})
 	if err != nil {
 		return fmt.Errorf("dial tls: %w", err)
@@ -93,7 +94,9 @@ func sendTLS(addr, host string, auth smtp.Auth, from string, to string, msg stri
 	}
 
 	defer func() {
-		_ = c.Close()
+		if cErr := c.Close(); cErr != nil {
+			err = fmt.Errorf("%w, failed to close connection: %w", err, cErr)
+		}
 	}()
 
 	// AUTH только если задан

@@ -82,17 +82,23 @@ func (r *ElasticRepo) EnsureIndex(ctx context.Context) (err error) {
 		return fmt.Errorf("index creation failed: %s", res.String())
 	}
 
-	_, _ = r.es.Cluster.Health(
+	_, err = r.es.Cluster.Health(
 		r.es.Cluster.Health.WithContext(ctx),
 		r.es.Cluster.Health.WithWaitForStatus("yellow"),
 		r.es.Cluster.Health.WithTimeout(10*time.Second),
 	)
+	if err != nil {
+		return fmt.Errorf("health check failed: %w", err)
+	}
 
 	return nil
 }
 
 func (r *ElasticRepo) Create(ctx context.Context, article *model.Article) (err error) {
-	data, _ := json.Marshal(article)
+	data, err := json.Marshal(article)
+	if err != nil {
+		return fmt.Errorf("failed to marshal article: %w", err)
+	}
 
 	res, err := r.es.Index(
 		indexName,
@@ -134,7 +140,10 @@ func (r *ElasticRepo) Get(ctx context.Context, id string) (article *model.Articl
 	case http.StatusNotFound:
 		return nil, apperrors.ErrArticleDoesNotExist
 	default:
-		b, _ := io.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
 
 		return nil, fmt.Errorf("es get failed: %s: %s", res.Status(), string(b))
 	}

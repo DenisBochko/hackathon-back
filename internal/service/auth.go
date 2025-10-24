@@ -122,7 +122,11 @@ func (s *AuthService) Register(ctx context.Context, username, email, password st
 	}
 
 	defer func() {
-		_ = tx.Rollback(ctx)
+		if err != nil {
+			if rErr := tx.Rollback(ctx); rErr != nil {
+				err = fmt.Errorf("%w, failed to rollback: %w", err, rErr)
+			}
+		}
 	}()
 
 	user, err = s.userRepo.InsertUser(ctx, tx, user)
@@ -158,7 +162,11 @@ func (s *AuthService) ResendConfirmation(ctx context.Context, email string) ([]b
 	}
 
 	defer func() {
-		_ = tx.Rollback(ctx)
+		if err != nil {
+			if rErr := tx.Rollback(ctx); rErr != nil {
+				err = fmt.Errorf("%w, failed to rollback: %w", err, rErr)
+			}
+		}
 	}()
 
 	if err := s.authRepo.DeleteVerificationTokenByUserID(ctx, nil, user.ID); err != nil {

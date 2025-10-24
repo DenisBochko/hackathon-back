@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -18,12 +19,15 @@ import (
 	"hackathon-back/internal/model"
 	"hackathon-back/internal/repository"
 	"hackathon-back/internal/service"
+	"hackathon-back/pkg/elasticsearch"
 	"hackathon-back/pkg/jwt"
 	"hackathon-back/pkg/mailer"
 	"hackathon-back/pkg/postgres"
 	"hackathon-back/pkg/redis"
 	"hackathon-back/pkg/server"
 )
+
+const defaultTimeout = 15 * time.Second
 
 type HealthRepository interface {
 	IsOK() (bool, error)
@@ -80,6 +84,31 @@ type UserRepository interface {
 	Block(ctx context.Context, ext repository.RepoExtension, id uuid.UUID) error
 }
 
+type ArticleRepository interface {
+	EnsureIndex(ctx context.Context) (err error)
+	Create(ctx context.Context, article *model.Article) (err error)
+	Get(ctx context.Context, id string) (article *model.Article, err error)
+	Delete(ctx context.Context, id string) (err error)
+	Patch(ctx context.Context, id string, fields map[string]interface{}) (err error)
+	Search(ctx context.Context, query string, from, size int, sort string) (results []model.SearchResult, err error)
+}
+
+type ArticleService interface {
+	CreateArticle(ctx context.Context, req *model.ArticleCreateRequest) (*model.Article, error)
+	GetArticle(ctx context.Context, id string) (*model.Article, error)
+	DeleteArticle(ctx context.Context, id string) error
+	UpdateArticle(ctx context.Context, id string, upd model.ArticleUpdate) error
+	SearchArticles(ctx context.Context, query string) ([]model.SearchResult, error)
+}
+
+type ArticleHandler interface {
+	CreateArticle(c *gin.Context)
+	GetArticle(c *gin.Context)
+	DeleteArticle(c *gin.Context)
+	UpdateArticle(c *gin.Context)
+	SearchArticles(c *gin.Context)
+}
+
 type App struct {
 	Cfg        *config.Config
 	Log        *zap.Logger
@@ -93,21 +122,24 @@ type App struct {
 }
 
 type Repository struct {
-	HealthRepository HealthRepository
-	AuthRepository   AuthRepository
-	UserRepository   UserRepository
+	HealthRepository  HealthRepository
+	AuthRepository    AuthRepository
+	UserRepository    UserRepository
+	ArticleRepository ArticleRepository
 }
 
 type Service struct {
-	HealthService HealthService
-	AuthService   AuthService
-	UserService   *service.UserService
+	HealthService  HealthService
+	AuthService    AuthService
+	UserService    *service.UserService
+	ArticleService ArticleService
 }
 
 type Handler struct {
-	HealthHandler HealthHandler
-	AuthHandler   AuthHandler
-	UserHandler   *handler.UserHandler
+	HealthHandler  HealthHandler
+	AuthHandler    AuthHandler
+	UserHandler    *handler.UserHandler
+	ArticleHandler ArticleHandler
 }
 
 type Security struct {
@@ -116,6 +148,9 @@ type Security struct {
 }
 
 func New(cfg *config.Config, log *zap.Logger) (*App, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	defer cancel()
+
 	db, err := initDB(&cfg.Database)
 	if err != nil {
 		log.Error("Failed to initialize database", zap.Error(err))
@@ -139,7 +174,20 @@ func New(cfg *config.Config, log *zap.Logger) (*App, error) {
 
 	mlr := initMailer(log, &cfg.Mailer)
 
-	repo := initRepository(log, db)
+	es, err := initElastic(log, &cfg.Elastic)
+	if err != nil {
+		log.Error("Failed to initialize elastic", zap.Error(err))
+
+		return nil, fmt.Errorf("failed to initialize elastic: %w", err)
+	}
+
+	repo := initRepository(log, db, es)
+
+	if err := repo.ArticleRepository.EnsureIndex(ctx); err != nil {
+		log.Error("Failed to EnsureIndex an article repository", zap.Error(err))
+
+		return nil, fmt.Errorf("failed to EnsureIndex an article repository: %w", err)
+	}
 
 	svc := initService(log, &cfg.JWT, sec, repo, mlr, rdb)
 
@@ -267,6 +315,26 @@ func initMailer(log *zap.Logger, cfg *config.Mailer) mailer.Mailer {
 	return mlr
 }
 
+func initElastic(log *zap.Logger, cfg *config.Elastic) (elasticsearch.Elasticsearch, error) {
+	elasticCfg := &elasticsearch.Config{
+		Addresses: cfg.Addresses,
+		Username:  cfg.Username,
+		Password:  cfg.Password,
+		CloudID:   cfg.CloudID,
+		APIKey:    cfg.APIKey,
+		Timeout:   cfg.Timeout,
+	}
+
+	client, err := elasticsearch.New(elasticCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("Elasticsearch initialized")
+
+	return client, nil
+}
+
 func initSecurity(log *zap.Logger, cfg config.Key) (*Security, error) {
 	privateKey, err := jwt.LoadECDSAPrivateKey(cfg.PrivateKey)
 	if err != nil {
@@ -296,12 +364,18 @@ func initHandler(log *zap.Logger, jwtCfg *config.JWT, svc *Service) *Handler {
 	log.Debug("Auth handler initialized")
 
 	userHandler := handler.NewUserHandler(svc.UserService)
+
 	log.Debug("User handler initialized")
 
+	articleHandler := handler.NewArticleHandler(svc.ArticleService)
+
+	log.Debug("Article handler initialized")
+
 	return &Handler{
-		HealthHandler: healthHandler,
-		AuthHandler:   authHandler,
-		UserHandler:   userHandler,
+		HealthHandler:  healthHandler,
+		AuthHandler:    authHandler,
+		UserHandler:    userHandler,
+		ArticleHandler: articleHandler,
 	}
 }
 
@@ -320,29 +394,43 @@ func initService(
 	log.Debug("Auth service initialized")
 
 	userSvc := service.NewUserService(repo.UserRepository)
+
 	log.Debug("User service initialized")
 
+	articleSvc := service.NewArticleService(repo.ArticleRepository)
+
+	log.Debug("Article service initialized")
+
 	return &Service{
-		HealthService: healthSvc,
-		AuthService:   authSvc,
-		UserService:   userSvc,
+		HealthService:  healthSvc,
+		AuthService:    authSvc,
+		UserService:    userSvc,
+		ArticleService: articleSvc,
 	}
 }
 
-func initRepository(log *zap.Logger, db postgres.Postgres) *Repository {
+func initRepository(log *zap.Logger, db postgres.Postgres, es elasticsearch.Elasticsearch) *Repository {
 	healthRepo := repository.NewHealthRepository(db.Pool())
+
 	log.Debug("Health repository initialized")
 
 	authRepo := repository.NewAuthRepository(db.Pool())
+
 	log.Debug("Auth repository initialized")
 
 	userRepo := repository.NewUserRepository(db.Pool())
+
 	log.Debug("User repository initialized")
 
+	articleRepo := repository.NewElasticRepository(es.Client())
+
+	log.Debug("Article repository initialized")
+
 	return &Repository{
-		HealthRepository: healthRepo,
-		AuthRepository:   authRepo,
-		UserRepository:   userRepo,
+		HealthRepository:  healthRepo,
+		AuthRepository:    authRepo,
+		UserRepository:    userRepo,
+		ArticleRepository: articleRepo,
 	}
 }
 
@@ -354,11 +442,12 @@ func initHTTPServer(log *zap.Logger, cfg *config.Config, publicKey *ecdsa.Public
 		hdl.HealthHandler,
 		hdl.AuthHandler,
 		hdl.UserHandler,
+		hdl.ArticleHandler,
 	)
 
 	httpServer := server.NewHTTPServer(
 		server.WithAddr(cfg.HTTPServer.Host, cfg.HTTPServer.Port),
-		server.WithTimeout(cfg.Timeout.Read, cfg.Timeout.Write, cfg.Timeout.Idle),
+		server.WithTimeout(cfg.HTTPServer.Timeout.Read, cfg.HTTPServer.Timeout.Write, cfg.HTTPServer.Timeout.Idle),
 		server.WithHandler(router),
 	)
 

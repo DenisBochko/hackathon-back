@@ -20,4 +20,6 @@ var (
 
 	ErrContextValueDoesNotExist = errors.New("context value does not exist")
 	ErrContextValueInvalidType  = errors.New("invalid context value type")
+
+	ErrArticleDoesNotExist = errors.New("article does not exist")
 )

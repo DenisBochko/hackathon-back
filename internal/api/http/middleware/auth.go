@@ -42,6 +42,7 @@ func JWTAuth(publicKey *ecdsa.PublicKey) gin.HandlerFunc {
 				Status:  handler.StatusNotPermitted,
 				Message: "invalid or expired token",
 			})
+
 			return
 		}
 

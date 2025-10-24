@@ -3,15 +3,14 @@ package repository
 import (
 	"context"
 	"errors"
-	"hackathon-back/internal/apperrors"
-	"hackathon-back/internal/model"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	_ "hackathon-back/internal/model"
+	"hackathon-back/internal/apperrors"
+	"hackathon-back/internal/model"
 )
 
 type UserRepository struct {
@@ -173,7 +172,7 @@ func (r *UserRepository) Block(ctx context.Context, ext RepoExtension, id uuid.U
 		WHERE id = $1
 	`
 
-	res, err := r.db.Exec(ctx, query, id)
+	res, err := ext.Exec(ctx, query, id)
 	if err != nil {
 		return err
 	}

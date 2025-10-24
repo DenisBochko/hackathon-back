@@ -22,6 +22,7 @@ func SetupRouter(
 	healthHdl HealthHandler,
 	authHdl AuthHandler,
 	userHdl UserHandler,
+	articleHdl ArticleHandler,
 ) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	gin.DefaultWriter = io.Discard
@@ -31,7 +32,7 @@ func SetupRouter(
 
 	// middleware
 	router.Use(middleware.Logger(log))
-	router.Use(middleware.RequestTimeout(cfg.Timeout.Request))
+	router.Use(middleware.RequestTimeout(cfg.HTTPServer.Timeout.Request))
 	router.Use(middleware.CORS(cfg.CORS))
 
 	jwtAuthMiddleware := middleware.JWTAuth(publicKey)
@@ -54,6 +55,9 @@ func SetupRouter(
 
 	userPath := basePath.Group("/user")
 	RegisterAdminUserRoutes(userPath, userHdl, jwtAuthMiddleware, allowManagerAndAdminMiddleware)
+
+	articlePath := basePath.Group("/article")
+	RegisterArticleRoutes(articlePath, articleHdl, jwtAuthMiddleware)
 
 	return router
 }

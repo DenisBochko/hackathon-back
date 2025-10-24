@@ -20,6 +20,69 @@ definitions:
         description: Результат запроса
         type: string
     type: object
+  Article:
+    description: модель статьи.
+    properties:
+      content_en:
+        description: Содержимое статьи на английском
+        example: Example
+        type: string
+      content_ru:
+        description: Содержимое статьи на русском
+        example: Пример
+        type: string
+      createdAt:
+        description: Timestamp создания аккаунта
+        example: "2006-01-02T15:04:05Z"
+        format: date-time
+        type: string
+      id:
+        description: ID статьи (UUID)
+        example: b4b03119-1290-44bc-b599-6a5e91d6611f
+        type: string
+      title_en:
+        description: Заголовок статьи на английском языке
+        example: Example
+        type: string
+      title_ru:
+        description: Заголовок статьи на русском языке
+        example: Пример
+        type: string
+      updatedAt:
+        description: Timestamp последнего обновления аккаунта
+        example: "2006-01-02T15:04:05Z"
+        format: date-time
+        type: string
+    required:
+    - content_en
+    - content_ru
+    - createdAt
+    - id
+    - title_en
+    - title_ru
+    - updatedAt
+    type: object
+  ArticleCreateRequest:
+    description: Данные, передаваемые для создания статьи.
+    properties:
+      content_en:
+        description: Содержимое статьи на английском
+        type: string
+      content_ru:
+        description: Содержимое статьи на русском
+        type: string
+      title_en:
+        description: Заголовок статьи на английском языке
+        type: string
+      title_ru:
+        description: Заголовок статьи на русском языке
+        type: string
+    required:
+    - content_en
+    - content_ru
+    - title_en
+    - title_ru
+    type: object
   AuthRequest:
     description: Данные, передаваемые в json для регистрации.
     properties:
@@ -179,6 +242,17 @@ definitions:
     - role
     - updatedAt
     type: object
+  hackathon-back_internal_model.SearchResult:
+    properties:
+      article:
+        $ref: '#/definitions/Article'
+      highlight:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -192,6 +266,195 @@ info:
   title: Hackathon API
   version: 0.1.0
 paths:
+  /article:
+    post:
+      consumes:
+      - application/json
+      description: Создать статью.
+      parameters:
+      - description: Данные для создания статьи
+        in: body
+        name: article
+        required: true
+        schema:
+          $ref: '#/definitions/ArticleCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/Article'
+              type: object
+        "400":
+          description: Invalid body param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to get article
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Создать статью.
+      tags:
+      - Articles
+  /article/{article_id}:
+    delete:
+      description: Удалить статью по ID.
+      parameters:
+      - description: Article UUID
+        in: path
+        name: article_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to delete article
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Удалить статью.
+      tags:
+      - Articles
+    get:
+      description: Получить статью по ID.
+      parameters:
+      - description: Article UUID
+        in: path
+        name: article_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  $ref: '#/definitions/Article'
+              type: object
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to get article
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Получить статью по ID.
+      tags:
+      - Articles
+    patch:
+      consumes:
+      - application/json
+      description: Частично обновить статью. Некоторые поля могут быть пустыми, обновляются
+        только те, которые не пустые.
+      parameters:
+      - description: Article UUID
+        in: path
+        name: article_id
+        required: true
+        type: string
+      - description: Поля для обновления статьи
+        in: body
+        name: updateArticle
+        required: true
+        schema:
+          $ref: '#/definitions/ArticleCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "400":
+          description: Invalid path param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "404":
+          description: Article not found
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to update article
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Частично обновить статью.
+      tags:
+      - Articles
+  /article/search:
+    get:
+      description: Полнотекстовый поиск по статьям.
+      parameters:
+      - description: Строка поиска
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            allOf:
+            - $ref: '#/definitions/_ResponseWithData'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/hackathon-back_internal_model.SearchResult'
+                  type: array
+              type: object
+        "400":
+          description: Invalid query param
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+        "500":
+          description: Failed to get articles
+          schema:
+            $ref: '#/definitions/_ResponseWithMessage'
+      security:
+      - AccessToken: []
+      - RefreshToken: []
+      summary: Поиск статей по содержанию.
+      tags:
+      - Articles
   /auth/confirm:
     post:
       consumes:

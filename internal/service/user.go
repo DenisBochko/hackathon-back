@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"hackathon-back/internal/model"
 
 	"github.com/google/uuid"
+
+	"hackathon-back/internal/model"
 )
 
 type UserService struct {

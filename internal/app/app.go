@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"errors"
 	"fmt"
-	"hackathon-back/pkg/elasticsearch"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -20,6 +19,7 @@ import (
 	"hackathon-back/internal/model"
 	"hackathon-back/internal/repository"
 	"hackathon-back/internal/service"
+	"hackathon-back/pkg/elasticsearch"
 	"hackathon-back/pkg/jwt"
 	"hackathon-back/pkg/mailer"
 	"hackathon-back/pkg/postgres"
@@ -85,20 +85,28 @@ type UserRepository interface {
 }
 
 type ArticleRepository interface {
-	EnsureIndex(ctx context.Context) error
-	Create(ctx context.Context, article *model.Article) error
-	Get(ctx context.Context, id string) (*model.Article, error)
-	Delete(ctx context.Context, id string) error
-	Patch(ctx context.Context, id string, fields map[string]interface{}) error
-	Search(ctx context.Context, query string) ([]model.SearchResult, error)
+	EnsureIndex(ctx context.Context) (err error)
+	Create(ctx context.Context, article *model.Article) (err error)
+	Get(ctx context.Context, id string) (article *model.Article, err error)
+	Delete(ctx context.Context, id string) (err error)
+	Patch(ctx context.Context, id string, fields map[string]interface{}) (err error)
+	Search(ctx context.Context, query string, from, size int, sort string) (results []model.SearchResult, err error)
 }
 
 type ArticleService interface {
-	CreateArticle(ctx context.Context, article *model.ArticleCreateRequest) (*model.Article, error)
+	CreateArticle(ctx context.Context, req *model.ArticleCreateRequest) (*model.Article, error)
 	GetArticle(ctx context.Context, id string) (*model.Article, error)
 	DeleteArticle(ctx context.Context, id string) error
-	UpdateArticle(ctx context.Context, id string, fields map[string]interface{}) error
+	UpdateArticle(ctx context.Context, id string, upd model.ArticleUpdate) error
 	SearchArticles(ctx context.Context, query string) ([]model.SearchResult, error)
+}
+
+type ArticleHandler interface {
+	CreateArticle(c *gin.Context)
+	GetArticle(c *gin.Context)
+	DeleteArticle(c *gin.Context)
+	UpdateArticle(c *gin.Context)
+	SearchArticles(c *gin.Context)
 }
 
 type App struct {
@@ -128,9 +136,10 @@ type Service struct {
 }
 
 type Handler struct {
-	HealthHandler HealthHandler
-	AuthHandler   AuthHandler
-	UserHandler   *handler.UserHandler
+	HealthHandler  HealthHandler
+	AuthHandler    AuthHandler
+	UserHandler    *handler.UserHandler
+	ArticleHandler ArticleHandler
 }
 
 type Security struct {
@@ -357,10 +366,14 @@ func initHandler(log *zap.Logger, jwtCfg *config.JWT, svc *Service) *Handler {
 	userHandler := handler.NewUserHandler(svc.UserService)
 	log.Debug("User handler initialized")
 
+	articleHandler := handler.NewArticleHandler(svc.ArticleService)
+	log.Debug("Article handler initialized")
+
 	return &Handler{
-		HealthHandler: healthHandler,
-		AuthHandler:   authHandler,
-		UserHandler:   userHandler,
+		HealthHandler:  healthHandler,
+		AuthHandler:    authHandler,
+		UserHandler:    userHandler,
+		ArticleHandler: articleHandler,
 	}
 }
 
@@ -421,6 +434,7 @@ func initHTTPServer(log *zap.Logger, cfg *config.Config, publicKey *ecdsa.Public
 		hdl.HealthHandler,
 		hdl.AuthHandler,
 		hdl.UserHandler,
+		hdl.ArticleHandler,
 	)
 
 	httpServer := server.NewHTTPServer(

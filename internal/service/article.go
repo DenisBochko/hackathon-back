@@ -90,8 +90,8 @@ func (s *ArticleService) UpdateArticle(ctx context.Context, id string, upd model
 	return nil
 }
 
-func (s *ArticleService) SearchArticles(ctx context.Context, p model.SearchParams) ([]model.SearchResult, error) {
-	res, err := s.articleRepo.Search(ctx, p.Q, p.From, p.Size, p.Sort)
+func (s *ArticleService) SearchArticles(ctx context.Context, query string) ([]model.SearchResult, error) {
+	res, err := s.articleRepo.Search(ctx, query, 0, 10, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search articles: %w", err)
 	}

@@ -49,3 +49,11 @@ type SearchParams struct {
 	Size int
 	Sort string // example: "created_at:desc"
 }
+
+type ArticleIDPathParam struct {
+	ID string `uri:"article_id" binding:"required,uuid" example:"b4b03119-1290-44bc-b599-6a5e91d6611f"`
+}
+
+type ArticleQueryParams struct {
+	Q string `binding:"required" form:"q"`
+}
